@@ -1,0 +1,94 @@
+@font-face{
+	font-family: 'Roboto-thin';
+	src: url('../fonts/Roboto-Thin.ttf');
+}
+
+@font-face {
+	font-family: 'Roboto-bold';
+	src: url('../fonts/Roboto-Black.ttf');
+}
+
+@main-font-color : #D1E1E9;
+@bg-color: #282828;
+@btn-bg-color: #3E98A8;
+
+body{
+	color: @main-font-color;
+	background-color: @bg-color;
+	font-family: 'Roboto-thin';
+	font-size: 14px;
+}
+
+.ui-page{
+	max-width: 700px;
+	margin: 0 auto;
+}
+
+.ui-footer{
+	position: absolute;
+	bottom: -20px;
+	width: 100%;
+	text-align: center;
+	margin: 0;
+	padding: 0;
+	bottom: 0;
+	font-size: 10px;
+}
+
+input.ui-input-text{
+	//border-radius: 5px;
+	padding: 5px;
+	border: 0px solid #EF5B55;
+	background-color: #303030;
+	color: @main-font-color;
+	font-size: 14px;
+	border-bottom: 1px solid #EF5B55;
+	width: 75%;
+}
+
+label.ui-input-text{
+	width: 21%;
+	display: inline-block;
+	&:before{
+		content: '';
+		display: block;
+		height: 10px;
+	}
+}
+
+h1{
+	font-size: 20px;
+}
+
+#page1 {
+
+	position: relative;
+
+	#pageheader{
+		font-family: 'Roboto-bold';
+		text-align: center;
+		color: #EF5B55;
+	}
+
+
+	#logindiv{
+		display: block !important;
+	}
+
+	.ui-btn{
+		font-family: 'Roboto-bold';
+		border-radius:5px;
+		padding: 10px;
+		//border: 1px solid #EF5B55;
+		background-color: @btn-bg-color;
+		display: block;
+		width: 120px;
+		margin: 10px auto;
+		text-align: center;
+	}
+
+	.ui-field-contain{
+		//padding: 10px 0;
+	}
+
+}
