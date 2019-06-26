@@ -13,8 +13,25 @@
 //TODO: 
 //	-there is some confusion about what to display on the player side during scoring...
 //	-The headings/prompts on some views are inconsistent, and look like trash
-//	-Fix unicode support!!!!
-var ipValue = "ws://127.0.0.1:8001/"; 
+//	-Fix unicode support!!!! Sidestepped issue with unidecode
+//  - Translate the following strings:
+//		- Question
+//		- Players fooled:
+//		- Players who like this:
+//		- "$lie$ is a lie! Submitted by $player$"
+//		- The truth is:
+//		- Scoring
+//		- Enter your lies
+//		- Select the Truth:
+//		- %d/%d selected lies, %d/%d liked
+//		- Like the answers for:
+//		-
+//		-
+//		- Choise Submitted
+
+//
+var ipValue = "ws://127.0.0.1:8001/";
+var gameaddress = "unknown";
 var connection;
 var received_msg;
 var loginname = "";
@@ -22,11 +39,10 @@ var jsonobj;
 var lies;
 var mylie;
 var viewer = false;
-var answer = "";
-var checkpng = "<img src=\"/src/check.png\">";
-var eckspng = "<img src=\"/src/ecks.png\">";
-var likepng = "<img src=\"/src/like.png\">";
-var cuppng = "<img src=\"/src/cup.png\">";
+var checkpng = "<img alt=\"OK\" src=\"/src/check.png\">";
+var eckspng = "<img alt =\"X\" src=\"/src/ecks.png\">";
+var likepng = "<img alt = \"likes\" src=\"/src/like.png\">";
+var cuppng = "<img alt = \"pts\" src=\"/src/cup.png\">";
 
 function latinize(nonlatin){
 	//This function is broken, does different shit on all browsers! FUCK THIS HORRIBLE MESS! I HATE FUCKING NON-ASCII CHARACTERS!
@@ -40,14 +56,46 @@ function latinize(nonlatin){
 	console.log(out);
 	return out
 }
+
+
+function create_table_from_list_of_html_codes(mylist){
+	// a general good idea is to make the table even sized.
+	// tend towards more rows than columns
+	var t = '<table border = "1" width="99%" height = "100%" style="margin: 1px;">';
+	var rows = Math.min(Math.ceil(Math.sqrt(mylist.length)*2, mylist.length));
+	var cols = Math.ceil(mylist.length/rows);
+
+	for ( var row = 0; row < rows; row ++){
+		t = t + '<tr height="20">';
+		for (var col = 0; col < cols; col++){
+			t = t + '<td align = "center">';
+			if (col + cols*row < mylist.length){
+				t = t + mylist[col + cols*row];
+			}else{
+				t = t+ ' ';
+			}
+
+			t = t + '</td>';
+		}
+		t = t + '</tr>\n';
+	}
+	t = t+ '</table>';
+	return t;
+}
+
+
 function init(){
 	ipValue = get_websocket_ip();
+	gameaddress ="http://"+ ipValue.split("/")[2].split(":")[0] +":8000";
 	console.log("Websocket IP:",ipValue);
 	showonly('logindiv');
+	$("#loginname").val("Player" + Math.floor(Math.random()*1000+1));
 	$("#viewerdiv").hide(); //because showonly has no effect here, wtf?
 	$("#enterliediv").hide();
 	$("#selectliediv").hide();
-	
+
+	document.getElementById('pageheader').firstElementChild.innerHTML= "Fakeage @ "+gameaddress;
+
 	//console.log("Latize test:",latinize("Búzafűlé	\tcsicskalangos CleanUpString tesztelÉs"));
 	connection = new WebSocket(ipValue); //handle failure
 	connection.onclose = function(evt) { onClose(evt) };
@@ -67,40 +115,60 @@ function init(){
 		var output = document.getElementById("viewerdivbody");
 		output.innerHTML = ''; //clear body
 		if (jsonobj.state == 'pregame' && viewer){
-			document.getElementById("viewerdivhead").innerHTML = "Waiting for players to join";
+			document.getElementById("viewerdivhead").innerHTML = '<table width="100%" style="margin: 10px;"> <tr>  <td><img src="qrcode.png" alt = "QR code"> </td> <td> Waiting for players to join at '+
+					gameaddress +'<br/> Total players:' + jsonobj.players.length + '</td></tr></table>';
+			var pre = document.createElement("b");
+			var playerlist = []
 			for (var player = 0; player<jsonobj.players.length; player ++){
-				var pre = document.createElement("p");
-				pre.innerHTML = jsonobj.players[player].name;
-				output.appendChild(pre);
-				console.log(pre.innerHTML);
+				playerlist.push(jsonobj.players[player].name);
 			}
+			pre.innerHTML = create_table_from_list_of_html_codes(playerlist);
+			output.appendChild(pre);
+			console.log(pre.innerHTML);
 		}
 		if (jsonobj.state == 'lietome'){
 			if (viewer){
 				document.getElementById("viewerdivhead").innerHTML = jsonobj.question+'<br>Enter your lies<br>';
+
+				var pre = document.createElement("p");
+				var playerlist = [];
 				for (var player = 0; player<jsonobj.players.length; player ++){
-					var pre = document.createElement("p");
-					pre.innerHTML = jsonobj.players[player].name;
-					if (jsonobj.players[player].lie != null ) pre.innerHTML = pre.innerHTML + checkpng;
-					else pre.innerHTML = pre.innerHTML + eckspng;
-					output.appendChild(pre);
-					console.log(pre.innerHTML);
+					var playerHTML =  jsonobj.players[player].name;
+					if (jsonobj.players[player].lie != null ) playerHTML = playerHTML + checkpng;
+					else playerHTML = playerHTML + eckspng;
+					playerlist.push(playerHTML);
 				}
+				pre.innerHTML = create_table_from_list_of_html_codes(playerlist);
+				output.appendChild(pre);
+				console.log(pre.innerHTML)
 			}else{ // show player lie to me ui
 				showquestion(jsonobj.question);
 			}
 		}
 		if (jsonobj.state == 'lieselection' ){
 			if (viewer){
-				document.getElementById("viewerdivhead").innerHTML = jsonobj.question+'<br>Select the truth<br>';
-				for (var player = 0; player<jsonobj.players.length; player ++){
-					var pre = document.createElement("p");
-					pre.innerHTML = jsonobj.players[player].name;
-					if (jsonobj.players[player].choice != null ) pre.innerHTML = pre.innerHTML + checkpng;
-					else pre.innerHTML = pre.innerHTML + eckspng;
-					output.appendChild(pre);
-					console.log(pre.innerHTML);
+
+				document.getElementById("viewerdivhead").innerHTML = jsonobj.question+'<br>Select the truth:<br>';
+				//display all lies
+
+				lies = sortlies();
+				for (var l = 0; l<lies.length; l ++){
+				    document.getElementById("viewerdivbody").innerHTML = create_table_from_list_of_html_codes(lies);
 				}
+
+				var playerswhoselectedlies = 0;
+				var playerswholikedlies = 0;
+
+				for (var player = 0; player<jsonobj.players.length; player ++){
+				    if (jsonobj.players[player].choice != null) playerswhoselectedlies ++;
+				    if (jsonobj.players[player].likes != null) playerswholikedlies ++;
+				}
+				var pre = document.createElement("p");
+				pre.innerHTML = playerswhoselectedlies.toString() + "/" + jsonobj.players.length.toString() + " Selected lies, "+ playerswholikedlies.toString()+"/"+jsonobj.players.length.toString() +" Liked";
+				output.appendChild(pre);
+				console.log(pre.innerHTML);
+
+
 			}else{ //show lie selector ui
 				showonly("#selectliediv");
 				output = document.getElementById("selectliediv") ;
@@ -129,9 +197,9 @@ function init(){
 			}
 			
 			if (jsonobj.currentlie != jsonobj.answer){
-				pretext += jsonobj.currentlie + " is a LIE! Submitted by:<br>" + playerswholiedthis.join(", ")+"<br> Players fooled: "+playerswhochosethis.join(", ");
+				pretext += jsonobj.currentlie + " is a lie! Submitted by:<br>" + playerswholiedthis.join(", ")+"<br> Players fooled: "+playerswhochosethis.join(", ");
 			}else{
-				pretext += jsonobj.currentlie + " is the TRUTH! <br>"
+				pretext += jsonobj.currentlie + " is the truth! <br>"
 				if (playerswhochosethis.length >0) pretext += " Players correct: " + playerswhochosethis.join(", ");
 				else pretext += "No players were correct!";
 			}
@@ -143,22 +211,45 @@ function init(){
 			output.appendChild(pre);
 			console.log(pre.innerHTML);
 		};
-		if (jsonobj.state == "finalscoring"){//scoring is identical in viewer and player
-			var pre = document.createElement("h1");
-			pre.innerHTML = jsonobj.question + '<br><br> The TRUTH is '+jsonobj.answer;
-			console.log(pre.innerHTML);
-			output.appendChild(pre);
-			
-			var pre = document.createElement("p");
-			var tabletext = "<table border = 1><thead><tr><th>Player</th><th>Lie</th><th>Score</th><th>Likes</th></tr></thead><tbody class=\"ui-widget-content\">";
-			
-			for (var player = 0; player<jsonobj.players.length; player ++){
+		if (jsonobj.state == "finalscoring") {//scoring is identical in viewer and player
+			//var pre = document.createElement("h1");
+			document.getElementById("viewerdivhead").innerHTML = jsonobj.question + ' (' + jsonobj.answer + ')' + ' Total scores:';
+			//console.log(pre.innerHTML);
+			//output.appendChild(pre);
+
+			//sort by scores
+			var players_by_score = {};
+			for (var player = 0; player < jsonobj.players.length; player++) {
 				var p = jsonobj.players[player];
-				var l = "";
-				if (p.lie !=null) l=p.lie;
-				tabletext += "<tr><td>"+p.name+"</td><td>"+l+"</td><td>"+p.score+cuppng+"</td><td>"+p.likecount+likepng+"</td></tr>\n";
+				players_by_score[p.name] = p.score;
 			}
-			tabletext += "</tbody></table>";
+
+			var sorted_players_by_score = Object.keys(players_by_score).map(function (key) {
+				return [key, players_by_score[key]];
+			});
+
+			sorted_players_by_score.sort(function (first, second) {
+				return second[1] - first[1];
+			});
+
+			var pre = document.createElement("p");
+
+			var tabletext = '<table width="100%"> <tr>';
+			var stepsize = Math.ceil(jsonobj.players.length/3.0);
+			for (var tablecount = 0; tablecount < 3; tablecount++) {
+				tabletext += '<td valign="top">';
+				tabletext += "<table border = 1><thead><tr><th>#</th><th>Player</th><th>Lie</th><th>"+cuppng+"</th><th>"+likepng+"</th></tr></thead><tbody class=\"ui-widget-content\">";
+
+				for (var player = stepsize *tablecount ; player < Math.min(jsonobj.players.length, (stepsize*(tablecount+1))); player++) {
+					var p = jsonobj.players[player];
+					var l = "";
+					if (p.lie != null) l = p.lie;
+					tabletext += "<tr><td>" + (player + 1) + "</td><td>" + p.name + "</td><td>" + l + "</td><td>" + p.score  + "</td><td>" + p.likecount  + "</td></tr>\n";
+				}
+				tabletext += "</tbody></table>";
+				tabletext += "</td>";
+			}
+			tabletext += '</tr></table>';
 			pre.innerHTML = tabletext;
 			console.log(pre.innerHTML);
 			output.appendChild(pre);
@@ -177,10 +268,16 @@ function login(){
 	loginname = $("#loginname").val();
 	connection.send("loginname:"+loginname);
 	console.log("Logged in as:" + loginname);
+	document.getElementById('pageheader').firstElementChild.innerHTML= loginname +" @ "+gameaddress;
+
+	document.getElementById("logindiv").innerHTML = loginname + " ready";
 	$("#logindiv").append('<br><a data-role="button" id="forcestart" onclick="forcestart()" data-inline="true">Force start game</a><br>\n').trigger('create');
+	$("#logindiv").append('<img src="qrcode.png" alt = "QR code">').trigger('create');
 	$("#loginbtn").hide();
+	$("#loginfieldcontain").hide();
 	$("#viewbtn").hide();
 	$("#submitdiv").hide();
+	$("#advancestatebtn").hide();
 }
 function view(){
 	connection.send("view:None");
@@ -188,6 +285,7 @@ function view(){
 	$("#logindiv").hide();
 	$("#viewerdiv").show();
 	$("#submitdiv").hide();
+	$("#advancestatebtn").show();
 	viewer = true;
 }
 function forcestart(){
@@ -208,7 +306,7 @@ function lie(){
 function sortlies(){
 	var sortedlies = [jsonobj.answer];
 	for (var player = 0; player<jsonobj.players.length; player ++){
-		if (jsonobj.players[player].lie != null ) sortedlies.push(jsonobj.players[player].lie);
+		if (jsonobj.players[player].lie != null && sortedlies.indexOf(jsonobj.players[player].lie)< 0) sortedlies.push(jsonobj.players[player].lie);
 		}
 	sortedlies.sort();
 	return sortedlies;
@@ -235,8 +333,10 @@ function like(me){
 	}
 	console.log("liked:"+me);
 	connection.send('like:'+me);
-	document.getElementById("selectliediv").innerHTML("Waiting for eveyone else...")
+	document.getElementById("selectliediv").innerHTML = '<h1>Waiting for eveyone else...</h1>' ;
+
 }
+
 function submitq(){
 	connection.send('submitq:'+$("#submitquestion").val()+":"+$("#submitanswer").val());
 	$("#submitdiv").hide();
@@ -255,8 +355,15 @@ function showquestion(q){
 	showonly("#enterliediv");
 	$("#mylie").show();
 	$("#liebtn").show();
-	$("#mylie").val("Enter your lie");
+	$("#mylie").val("RandomLie"+Math.floor(Math.random()*1000));
 	document.getElementById("questionh").innerHTML = q;
+}
+
+function advancestate(){
+    if (viewer) {
+        connection.send('advancestate:0');
+        console.log("Forcing state advance");
+    }
 }
 
 </script>
@@ -268,13 +375,13 @@ function showquestion(q){
 		</div>
 		<div id="logindiv">
 			<h1>Enter your name if you wish to play!</h1>
-			<div data-role="fieldcontain">
+			<div data-role="fieldcontain" id ="loginfieldcontain">
 				<label for="loginname">My name is</label>
 				<input type="text" id="loginname" value="Dumbfuck" />
 				<a data-role="button" id="loginbtn" onclick="login()" data-inline="true">Play!</a>	
 			</div>
 			<div data-role="fieldcontain">
-				<a data-role="button" id="viewbtn" onclick="view()" data-inline="true">View Game</a>	
+				<a data-role="button" id="viewbtn" onclick="view()" data-inline="true">View only</a>
 			</div>
 		</div>
 		
@@ -302,16 +409,17 @@ function showquestion(q){
 		</div>
 		
 		<div id="viewerdiv">	
-			<h1 id ='viewerdivhead'>View waiting for server..</h1>
+			<h1 id ='viewerdivhead'> <img src="qrcode.png" alt = "QR code"> View waiting for server..</h1>
+
 			<div id = "viewerdivbody">
 				nobody in yet
 			</div>
 		</div>
-		
-		<div data-role="footer">
-			<h1>Game by Piti mysterme@gmail.com</h1>
+		<footer>
+		<div data-role="footer" class ="ui-footer-fixed">
+			<h4> Fakeage by PT mysterme@gmail.com <a data-role="button" id="advancestatebtn" data-icon="arrow-r" data-id="myfooter"  onclick="advancestate()" data-inline="true">Next</a> </h4>
 		</div>
-		
+		</footer>
 		<script>init()</script>
 			</div>
 	 </body>

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <title>Fakeage Player</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <script src="/src/jquery-1.6.4.js"></script>
+        <script src="/src/jquery.mobile-1.1.0.js"></script>
+        <link href="/src/css/jquery.structure.css" rel="stylesheet" />
+        <link href="/src/css/jquery.theme.css" rel="stylesheet" />
+
+<script>
+
+var ipValue = "ws://127.0.0.1:8001/"; //the IP must be passed!
+var connection;
+var received_msg;
+//var alarm_hours_range ;
+
+function ledFn() {
+	var toSend = "LED";
+	connection.send(toSend); 
+};
+
+function setsliderto(sliderid, newvalue){
+	$("#"+sliderid).val(newvalue);
+	$("#"+sliderid).slider("refresh");
+}
+
+function pad (str, max, sep) {
+  str = str.toString();
+  return str.length < max ? pad(sep + str, max,sep) : str;
+}
+
+function mod(){
+	var text = document.getElementById('ip').value;
+	received_msg = "";
+	ipValue = text;	
+	output = document.getElementById("servertime");
+	var alarm_hours_range = document.getElementById("alarm_hours-range");
+	
+	connection = new WebSocket(ipValue, ['arduino']); 	
+	console.log(text)
+	console.log("IP value changed to:"+ipValue);
+	connection.onmessage = function (evt) { 
+		received_msg = evt.data;
+		console.log(received_msg);
+		var jsonobj = JSON.parse(received_msg);
+		console.log(jsonobj);
+		document.getElementById("boldtime").innerHTML = jsonobj.curhours.toString()+":"+pad(jsonobj.curmins.toString(),2,'0');
+		
+		setsliderto("alarm_minutes-range"	,jsonobj.alarmmins	);
+		setsliderto("alarm_hours-range"  	,jsonobj.alarmhours	);
+		setsliderto("sliderR-range"  		,jsonobj.r			);
+		setsliderto("sliderG-range"  		,jsonobj.g			);
+		setsliderto("sliderB-range"  		,jsonobj.b			);
+		setsliderto("sliderW-range"  		,jsonobj.w			);
+		setsliderto("sliderY-range"  		,jsonobj.y			);
+		setsliderto("sliderR-range"  		,jsonobj.r			);
+		var cb = $("#alarm_toggle_cb");
+		$("#alarm_toggle_cb").prop('checked',jsonobj.alarm_on	);
+		$("#alarm_toggle_cb").checkboxradio('refresh');
+		//$("#alarm_toggle").checked = jsonobj.alarm_on;
+		
+		//console.log($("#alarm_toggle").)
+		//$("#alarm_toggle").refresh
+		
+		
+		//$("#alarm_hours-range").value(jsonobj.alarmhours);
+		//var boldtime = document.getElementById("boldtime")
+		
+		//alarm_hours_range.value(jsonobj.alarmhours);
+		//alert("Message is received:"+received_msg);
+		//var pre = document.createElement("b");
+		//pre.style.wordWrap = "break-word";
+		//pre.innerHTML = received_msg;
+		//output.appendChild(pre);
+	};
+}	
+
+function xmit(mykey,newValue)
+{
+	connection.send(mykey+newValue);
+}
+
+
+</script>
+      </head>  
+    <body>
+
+        <div data-role="page" id="page1">
+	<div id="pageheader">
+		<h1>Fakeage</h1>
+	</div>
+	<div id="logindiv">
+		<h1>Enter your name if you wish to play!</h1>
+		<div data-role="fieldcontain">
+			<label for="loginname">My name is</label>
+			<input type="text" id="loginname" value="Dumbfuck" />
+			<a data-role="button" id="loginbtn" onclick="login(this.value)" data-inline="true">Play!</a>	
+		</div>
+	</div>
+	
+	<div id="enterliediv">
+		<h1>Enter Your lie!</h1>
+		<div data-role="fieldcontain">
+			<input type="text" id="mylie" value="Im straight" />
+			<a data-role="button" id="liebtn" onclick="lie(this.value)" data-inline="true">Submit lie</a>	
+		</div>
+	</div>
+	
+	<div id="selectlie">
+		<h1>Enter Your lie!</h1>
+		<div data-role="fieldcontain">
+			<input type="text" id="mylie" value="Im straight" />
+			<a data-role="button" id="liebtn" onclick="lie(this.value)" data-inline="true">Submit lie</a>	
+		</div>
+	</div>
+	
+	
+	
+
+            <div data-role="footer">
+                <h1>Alarm clock and RGBW Lamp</h1>
+            </div>
+            <div data-role="content">
+				<div id="servertime"><label for="servertime">Current time is:  <b id="boldtime"></b></label></div>
+                <div data-role="fieldcontain" id="alarm_hours">
+                    <label for="alarm_hours-range">Alarm Hours</label>
+                    <input type="range" id="alarm_hours-range" value="0" min="0" max="23" step="1" onchange="xmit('h',this.value)"
+                    data-highlight="true" />
+                </div>
+                <div data-role="fieldcontain" id="alarm_minutes"> 
+                    <label for="alarm_minutes-range">Alarm Minutes</label>
+                    <input type="range" id="alarm_minutes-range" value="0" min="0" max="59" step="1" onchange="xmit('m',this.value)"
+                    data-highlight="true" />
+                </div>
+                <div data-role="flipswitch" id="alarm_toggle">
+                    <label for="alarm_toggle_cb">Enable alarm</label>
+                    <input type="checkbox" id="alarm_toggle_cb" 	data-role="flipswitch" data-on-text="on" data-off-text="off" onchange="xmit('a',this.checked)"/>
+                </div>
+                <div data-role="fieldcontain" id="sliderR">
+                    <label for="sliderR-range">Red</label>
+                    <input type="range" id="sliderR-range" value="0" min="0" max="255" step="1" onchange="xmit('r',this.value)"
+                    data-highlight="true" />
+                </div>
+                <div data-role="fieldcontain" id="sliderG">
+                    <label for="sliderG-range">Green</label>
+                    <input type="range" id="sliderG-range" value="0" min="0" max="255" onchange="xmit('g',this.value)"
+                    step="1" data-highlight="true" />
+                </div>
+                <div data-role="fieldcontain" id="sliderB">
+                    <label for="sliderB-range">Blue</label>
+                    <input type="range" id="sliderB-range" value="0" min="0" max="255" onchange="xmit('b',this.value)"
+                    step="1" data-highlight="true" />
+                </div>
+                <div data-role="fieldcontain" id="sliderW">
+                    <label for="sliderW-range">White</label>
+                    <input type="range" id="sliderW-range" value="0" min="0" max="255" onchange="xmit('w',this.value)"
+                    step="1" data-highlight="true" />
+                </div>
+                <div data-role="fieldcontain" id="sliderY">
+                    <label for="sliderY-range">Gamma</label>
+                    <input type="range" id="sliderY-range" value="0" min="0" max="100" onchange="xmit('y',this.value)"
+                    step="1" data-highlight="true" />
+                </div>
+				<div data-role="fieldcontain">
+                    <label for="text1">WebSocket IP</label>
+                    <input type="text" id="ip" value="ws://127.0.0.1:8001/" onblur='mod()' />
+                </div>
+				 <div data-role="fieldcontain" id="slider3">
+				 <label for="slider3-range">Pick Any Color</label>
+					<input type="color" id="html5colorpicker" onchange="sendColor(this.value)" value="#ff0000" style="width:85%;">
+				</div> 
+                <div class="ui-grid-b">
+                    <div class="ui-block-a">
+                        <a data-role="button" id="White only" onclick="xmit('l')" data-inline="true">White only</a>
+                    </div>
+                    <div class="ui-block-b">
+                        <a data-role="button" id="Off" onclick="xmit('x')" data-inline="true">Off</a>
+                    </div>
+                    <div class="ui-block-c">
+                        <a data-role="button" id="Nothing" onclick="xmit(' ')" data-inline="true">Nothing</a>
+                    </div>
+                </div>
+            </div>
+            <div data-role="footer">
+                <h1>Remember to toggle the alarm!</h1>
+            </div>
+			
+			<script>mod()</script>
+		</div>
+    </body>
+
+</html>
