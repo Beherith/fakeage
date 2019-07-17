@@ -31,6 +31,7 @@ from SimpleHTTPServer import SimpleHTTPRequestHandler
 import pyqrcode
 
 from unidecode import unidecode #thank me later: https://pypi.org/project/Unidecode/#description
+#from gooey import Gooey, GooeyParser
 
 #reload(sys)
 #sys.setdefaultencoding('utf8') #https://stackoverflow.com/questions/21129020/how-to-fix-unicodedecodeerror-ascii-codec-cant-decode-byte
