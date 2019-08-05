@@ -20,3 +20,5 @@ standalone exe built with pyinstaller --onefile fakeage_server.py
 Then navigate your brower to http://[my.local.ip]:8000/
 
 Have fun!
+
+![game looks](https://raw.githubusercontent.com/Beherith/fakeage/master/screenshot.PNG)
