@@ -8,6 +8,8 @@ Two main components are fakeage_server.py, which contains the server code, and i
 
 The players connect to the server using their browsers via websockets.
 
+All input from users will be butchered to remove all non [A-Z] [0-9] characters to preserve the developer's sanity.
+
 -----------------------------------
 
 Requires a few python2 libs, e.g. the imports from fakeage_server.py
