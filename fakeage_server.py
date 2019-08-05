@@ -323,7 +323,7 @@ def handleTick():
 			scoring(game)
 			game.state = 'scoring'
 			game.t -= game.scoretime  # rewind time to get instant scoring round
-			#updategameview()
+			updategameview()
 			return
 
 	if game.state == 'scoring':

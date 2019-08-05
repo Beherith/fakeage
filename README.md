@@ -1,5 +1,9 @@
 # fakeage
+
 fakeage
+
+
+Requires a few python2 libs:
 
 
 Simple python websockets lying game

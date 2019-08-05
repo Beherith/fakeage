@@ -61,7 +61,7 @@ function latinize(nonlatin){
 function create_table_from_list_of_html_codes(mylist){
 	// a general good idea is to make the table even sized.
 	// tend towards more rows than columns
-	var t = '<table border = "1" width="99%" height = "100%" style="margin: 1px;">';
+	var t = '<table border = "0" width="99%" height = "100%" style="margin: 1px;">';
 	var rows = Math.min(Math.ceil(Math.sqrt(mylist.length)*2, mylist.length));
 	var cols = Math.ceil(mylist.length/rows);
 
@@ -197,7 +197,7 @@ function init(){
 			}
 			
 			if (jsonobj.currentlie != jsonobj.answer){
-				pretext += jsonobj.currentlie + " is a lie! Submitted by:<br>" + playerswholiedthis.join(", ")+"<br> Players fooled: "+playerswhochosethis.join(", ");
+				pretext += jsonobj.currentlie + " is a lie! Submitted by: " + playerswholiedthis.join(", ")+"<br> Players fooled: "+playerswhochosethis.join(", ");
 			}else{
 				pretext += jsonobj.currentlie + " is the truth! <br>"
 				if (playerswhochosethis.length >0) pretext += " Players correct: " + playerswhochosethis.join(", ");
@@ -236,9 +236,11 @@ function init(){
 
 			var tabletext = '<table width="100%"> <tr>';
 			var stepsize = Math.ceil(jsonobj.players.length/3.0);
-			for (var tablecount = 0; tablecount < 3; tablecount++) {
+			var numtables = 3;
+			if (viewer) numtables = 1;
+			for (var tablecount = 0; tablecount < numtables; tablecount++) {
 				tabletext += '<td valign="top">';
-				tabletext += "<table border = 1><thead><tr><th>#</th><th>Player</th><th>Lie</th><th>"+cuppng+"</th><th>"+likepng+"</th></tr></thead><tbody class=\"ui-widget-content\">";
+				tabletext += "<table border = 0><thead><tr><th>#</th><th>Player</th><th>Lie</th><th>"+cuppng+"</th><th>"+likepng+"</th></tr></thead><tbody class=\"ui-widget-content\">";
 
 				for (var player = stepsize *tablecount ; player < Math.min(jsonobj.players.length, (stepsize*(tablecount+1))); player++) {
 					var p = jsonobj.players[player];
