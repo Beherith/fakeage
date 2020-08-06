@@ -4,7 +4,12 @@
     <bookmark url="file://$PROJECT_DIR$/fakeage_server.py" line="344" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="4d423415-c6e5-412f-9823-da9a0dd71200" name="Default" comment="" />
+    <list default="true" id="4d423415-c6e5-412f-9823-da9a0dd71200" name="Default" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/qrcode.png" beforeDir="false" afterPath="$PROJECT_DIR$/qrcode.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/websocket_ip.js" beforeDir="false" afterPath="$PROJECT_DIR$/websocket_ip.js" afterDir="false" />
+    </list>
     <ignored path="fakeage.iws" />
     <ignored path=".idea/workspace.xml" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -73,8 +78,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/fakeage_server.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="717">
-              <caret line="325" column="12" selection-start-line="325" selection-start-column="12" selection-end-line="325" selection-end-column="12" />
+            <state relative-caret-position="-163">
+              <caret line="375" column="74" lean-forward="true" selection-start-line="375" selection-start-column="74" selection-end-line="375" selection-end-column="74" />
               <folding>
                 <element signature="e#691#704#0" expanded="true" />
               </folding>
@@ -85,8 +90,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/index.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="163">
-              <caret line="240" column="71" selection-start-line="240" selection-start-column="61" selection-end-line="240" selection-end-column="71" />
+            <state relative-caret-position="306">
+              <caret line="234" lean-forward="true" selection-start-line="234" selection-end-line="234" />
               <folding>
                 <element signature="n#style#0;n#table#0;n#!!top" expanded="true" />
                 <element signature="n#style#0;n#table#0;n#!!top" expanded="true" />
@@ -126,11 +131,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>viewer</find>
-      <find>current</find>
-      <find>loadquestions</find>
-      <find>finalscor</find>
-      <find>waiting</find>
       <find>time to</find>
       <find>time</find>
       <find>footer</find>
@@ -144,7 +144,6 @@
       <find>mylie</find>
       <find>likecount</find>
       <find>enter</find>
-      <find>viewerdiv</find>
       <find>port</find>
       <find>qr</find>
       <find>latinize</find>
@@ -156,6 +155,12 @@
       <find>width</find>
       <find>advancing to</find>
       <find>border</find>
+      <find>onError</find>
+      <find>waiting</find>
+      <find>viewerdiv</find>
+      <find>force</find>
+      <find>h1</find>
+      <find>like</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -174,8 +179,8 @@
     </option>
   </component>
   <component name="ProjectFrameBounds" extendedState="6">
-    <option name="x" value="1912" />
-    <option name="y" value="-133" />
+    <option name="x" value="-8" />
+    <option name="y" value="-8" />
     <option name="width" value="1936" />
     <option name="height" value="1176" />
   </component>
@@ -203,6 +208,7 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -219,7 +225,6 @@
           <select />
         </subPane>
       </pane>
-      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -316,18 +321,19 @@
       <workItem from="1561633788346" duration="2542000" />
       <workItem from="1562591274619" duration="2179000" />
       <workItem from="1563198864167" duration="636000" />
-      <workItem from="1565014631604" duration="1182000" />
+      <workItem from="1565014631604" duration="2512000" />
+      <workItem from="1596714514485" duration="3398000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="51306000" />
+    <option name="totallyTimeSpent" value="56034000" />
   </component>
   <component name="ToolWindowManager">
-    <frame x="1912" y="-133" width="1936" height="1176" extended-state="6" />
+    <frame x="-8" y="-8" width="1936" height="1176" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.2249467" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.22707888" />
       <window_info id="Structure" order="1" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -362,7 +368,7 @@
     </option>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/fakeage$fakeage_server.coverage" NAME="fakeage_server Coverage Results" MODIFIED="1565014847491" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/fakeage$fakeage_server.coverage" NAME="fakeage_server Coverage Results" MODIFIED="1596721669985" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
   <component name="editorHistoryManager">
     <entry file="file://C:/Python27/Lib/SocketServer.py" />
@@ -389,15 +395,15 @@
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/README.md">
+      <provider editor-type-id="text-editor">
+        <state relative-caret-position="-9">
+          <caret line="7" selection-start-line="7" selection-end-line="7" />
+        </state>
+      </provider>
       <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
         <state split_layout="SPLIT">
           <first_editor />
           <second_editor />
-        </state>
-      </provider>
-      <provider editor-type-id="text-editor">
-        <state relative-caret-position="-9">
-          <caret line="7" selection-start-line="7" selection-end-line="7" />
         </state>
       </provider>
     </entry>
@@ -445,8 +451,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/fakeage_server.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="717">
-          <caret line="325" column="12" selection-start-line="325" selection-start-column="12" selection-end-line="325" selection-end-column="12" />
+        <state relative-caret-position="-163">
+          <caret line="375" column="74" lean-forward="true" selection-start-line="375" selection-start-column="74" selection-end-line="375" selection-end-column="74" />
           <folding>
             <element signature="e#691#704#0" expanded="true" />
           </folding>
@@ -455,8 +461,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/index.html">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="163">
-          <caret line="240" column="71" selection-start-line="240" selection-start-column="61" selection-end-line="240" selection-end-column="71" />
+        <state relative-caret-position="306">
+          <caret line="234" lean-forward="true" selection-start-line="234" selection-end-line="234" />
           <folding>
             <element signature="n#style#0;n#table#0;n#!!top" expanded="true" />
             <element signature="n#style#0;n#table#0;n#!!top" expanded="true" />

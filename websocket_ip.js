@@ -1,3 +1,3 @@
 function get_websocket_ip(){
-	return "ws://192.168.1.100:8001/"
+	return "ws://152.66.253.59:8001/"
 }
