@@ -4,9 +4,10 @@ Copyright (c) 2013 Dave P.
 '''
 import sys
 VER = sys.version_info[0]
+
 if VER >= 3:
     import socketserver
-    #from http.server import BaseHTTPRequestHandler
+    from http.server import BaseHTTPRequestHandler
     from io import StringIO, BytesIO
 else:
     import SocketServer
@@ -149,13 +150,13 @@ class WebSocket(object):
 
       if self.opcode == CLOSE:
          status = 1000
-         reason = u''
+         reason = ''
          length = len(self.data)
 
          if length == 0:
             pass
          elif length >= 2:
-            status = struct.unpack_from('!H', buffer( self.data[:2]))[0] # converted to buffer
+            status = struct.unpack_from('!H', self.data[:2])[0]
             reason = self.data[2:]
 
             if status not in _VALID_STATUS_CODES:
@@ -209,7 +210,7 @@ class WebSocket(object):
               if self.frag_type == TEXT:
                   utf_str = self.frag_decoder.decode(self.data, final = True)
                   self.frag_buffer.append(utf_str)
-                  self.data = u''.join(self.frag_buffer)
+                  self.data = ''.join(self.frag_buffer)
               else:
                   self.frag_buffer.extend(self.data)
                   self.data = self.frag_buffer
@@ -284,7 +285,7 @@ class WebSocket(object):
              for d in data:
                  self._parseMessage(ord(d))
 
-   def close(self, status = 1000, reason = u''):
+   def close(self, status = 1000, reason = ''):
        """
           Send Close frame to the client. The underlying socket is only closed
           when the client acknowledges the Close frame.
@@ -594,7 +595,7 @@ class SimpleWebSocketServer(object):
    def close(self):
       self.serversocket.close()
 
-      for desc, conn in self.connections.items():
+      for desc, conn in list(self.connections.items()):
          conn.close()
          conn.handleClose()
 
@@ -631,7 +632,7 @@ class SimpleWebSocketServer(object):
                          raise Exception('received client close')
 
             except Exception as n:
-               print 'Exception in wList'
+               print('Exception in wList')
                client.client.close()
                client.handleClose()
                del self.connections[ready]
@@ -647,7 +648,7 @@ class SimpleWebSocketServer(object):
                   self.connections[fileno] = self._constructWebSocket(newsock, address)
                   self.listeners.append(fileno)
                except Exception as n:
-                  print 'Exception: rList ready; closing socket'
+                  print('Exception: rList ready; closing socket')
                   if sock is not None:
                       sock.close()
                   raise
@@ -658,7 +659,7 @@ class SimpleWebSocketServer(object):
                try:
                   client._handleData()
                except Exception as n:
-                  print 'Exception: rList unready; closing socket',client,ready
+                  print('Exception: rList unready; closing socket',client,ready)
                   client.client.close()
                   client.handleClose()
                   del self.connections[ready]
