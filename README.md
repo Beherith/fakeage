@@ -1,5 +1,5 @@
 # Fakeage - a Local area network (e.g. WiFi) Fibbage-like lying game
--
+
 ### How to play
 
 Add your questions (tab separated questions and answers) to [questions.tsv](questions.tsv).  
@@ -10,7 +10,6 @@ All input from players will be butchered to remove all non [A-Z] [0-9] character
 Supports players rejoining with the same names, supports liking of submissions.   
 1 point for getting the correct answer, 1 point for fooling others.   
 
----
 
 ### To build or dev
 
