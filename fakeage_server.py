@@ -26,6 +26,7 @@ import socket
 import sys
 import threading
 import time
+from collections import defaultdict
 
 import pyqrcode
 from unidecode import unidecode  #thank me later: https://pypi.org/project/Unidecode/#description
@@ -40,8 +41,8 @@ class Game:
         self.players = {}  # dict of client:playername
         self.questions = []  # pairs of (questions,answer)
 
-        self.scores = {}  # dict of playername: score
-        self.likecount = {}  # dict of playername:numlikes
+        self.scores = defaultdict(int)  # dict of playername: score
+        self.likecount = defaultdict(int) # dict of playername:numlikes
         self.likes = {}  # dict of playername:likedlie
         self.lies = {}  # dict of playername:submitted lie
         self.choices = {}  # dict of playername:chosen answer
@@ -80,9 +81,8 @@ class Game:
 
     def reset(self):
         self.loadquestions()
-        for player in self.scores:
-            self.scores[player] = 0
-            self.likecount[player] = 0
+        self.scores = defaultdict(int)
+        self.likecount = defaultdict(int)
         self.roundcount = 0
         self.choices = {}
         self.likes = {}
@@ -103,8 +103,6 @@ class Game:
             print(f'{playername} reconnected, score = {score}, likecount = {likecount}')
         else:
             self.players[client] = playername
-            self.scores[playername] = 0
-            self.likecount[playername] = 0
             print(f'{playername} had joined')
         return 0
 
