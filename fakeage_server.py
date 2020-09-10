@@ -74,13 +74,11 @@ class Game:
     def loadquestions(self, questionsfilename=''):
         if questionsfilename != '':
             self.questionsfilename = questionsfilename
-        #self.questionsfilename = questionsfilename
-        questionsfile = open(self.questionsfilename)
-        for line in questionsfile.readlines():
-            line = line.strip().split('\t')
-            if len(line) == 2:
-                self.questions.append([line[0], unidecode_allcaps_shorten32(line[1])])
-        questionsfile.close()
+        with open(self.questionsfilename) as questionsfile:
+            for line in questionsfile.readlines():
+                line = line.strip().split('\t')
+                if len(line) == 2:
+                    self.questions.append([line[0], unidecode_allcaps_shorten32(line[1])])
         print(f'Loaded {len(self.questions)} questions')
 
     def reset(self):
@@ -488,15 +486,13 @@ if __name__ == "__main__":
     # Set the IP in the js file on each launch of the server.
     # This seems pretty hacky, but i couldnt think of anything better
     websocket_ip_fn = "websocket_ip.js"
-    websocket_ip_file = open(websocket_ip_fn)
-    websocket_ip_file_text = websocket_ip_file.readlines()
-    websocket_ip_file.close()
+    with open(websocket_ip_fn, 'r') as wsfile_r:
+        websocket_ip_file_text = wsfile_r.readlines()
     websocket_ip_file_text[1] = '   return "ws://{}:{}/"\n'.format(my_ip, str(options.wsport))
     print(websocket_ip_file_text[1])
 
-    websocket_ip_file = open(websocket_ip_fn, 'w')
-    websocket_ip_file.write(''.join(websocket_ip_file_text))
-    websocket_ip_file.close()
+    with open(websocket_ip_fn, 'w') as wsfile_w:
+        wsfile_w.write(''.join(websocket_ip_file_text))
 
     # load questions:
     game.autoadvance = options.autoadvance
