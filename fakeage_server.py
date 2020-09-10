@@ -34,11 +34,23 @@ from unidecode import unidecode  #thank me later: https://pypi.org/project/Unide
 from SimpleWebSocketServer import WebSocket, SimpleWebSocketServer
 
 
-class Game:
+class Singleton(type):
+    # https://stackoverflow.com/q/6760685
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(
+                Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+
+class Game(metaclass=Singleton):
     def __init__(self):
         self.clients = []  # list of all connected clients
         self.viewers = []  # list of clients who are views only
         self.players = {}  # dict of client:playername
+        self.disconnected_players = {} # dict of playername:{'score':0,'likes':0}
         self.questions = []  # pairs of (questions,answer)
 
         self.scores = defaultdict(int)  # dict of playername: score
@@ -47,20 +59,19 @@ class Game:
         self.lies = {}  # dict of playername:submitted lie
         self.choices = {}  # dict of playername:chosen answer
         self.states = ["pregame", "lietome", "lieselection", "scoring", "finalscoring"]
-
-        self.disconnected_players = {} # dict of playername:{'score':0,'likes':0}
+        self.state = "pregame"
 
         self.question = ''
         self.answer = ''
-        self.state = "pregame"
+
         self.currentlie = None
         self.forcestart = False
         self.t = time.time()
         # some game relevant constants:
         self.autoadvance = False
         self.scoretime = 10  # seconds between each scoring view
-        self.lietime = 120  # time each player has to come up with a lie
-        self.choicetime = 30  # each player has numlies * choicetime time to select and like answers
+        self.lietime = 120  # time [s] each player has to come up with a lie
+        self.choicetime = 30  # players have numlies * choicetime seconds to select and like answers
         self.questionsperround = 15
         self.roundcount = 0
         self.questionsfilename = ''
@@ -94,7 +105,7 @@ class Game:
             playername = playername[0:32]
         if playername in iter(self.players.values()):
             print(f'{client} tried to log in as an existing playername {playername}!')
-            return -1
+            return False
         if playername in self.disconnected_players:
             (score, likecount) = self.disconnected_players.pop(playername)
             self.players[client] = playername
@@ -104,7 +115,7 @@ class Game:
         else:
             self.players[client] = playername
             print(f'{playername} had joined')
-        return 0
+        return True
 
     def removeplayer(self, client):
         if client in self.clients:
@@ -152,6 +163,27 @@ class Game:
               f'viewinfo: {gamestatedict}')
         return gamestatedict
 
+    def updateview(self, recipients='all'):
+        viewinfo = self.getgamestate()
+        # unicode is needed cause otherwise JS receives it as a Blob type object instead of string
+        ujsonviewinfo = str(json.dumps(viewinfo))
+        if recipients in ('all', 'players'):
+            for player in self.players:
+                player.sendMessage(ujsonviewinfo)
+        if recipients in ('all', 'viewers'):
+            for viewer in self.viewers:
+                viewer.sendMessage(ujsonviewinfo)
+
+    def do_scoring(self):
+        print('Scoring called')
+        if not self.scoreorder:  # done, advance state
+            print('Done with scores, advancing automatically to finalscoring')
+            self.state = 'finalscoring'
+        else:
+            self.currentlie = self.scoreorder.pop(0)[0]
+        self.updateview()
+        self.time()
+
     def updatescoreorder(self):
         self.scoreorder = []  # list of [lie, numtimeselected] lists
         # build a list of lies to score through, and update the scores
@@ -173,18 +205,18 @@ class Game:
     def lie_selection_received(self, client, selectedlie):
         if game.state != 'lieselection':
             print(f'{game.players[client]} tried to choose lie {selectedlie} out of time')
-            return -1
+            return False
         player_who_selected_lie = self.players[client]
         if player_who_selected_lie in self.choices:
             print(f'Player {player_who_selected_lie} tried to select another lie '
                   f'({selectedlie}) despite already having chose '
                   f'({self.choices[player_who_selected_lie]})')
-            return -1
+            return False
 
         if player_who_selected_lie in self.lies and \
            self.lies[player_who_selected_lie] == selectedlie:
             print(f'Player {player_who_selected_lie} tried to select their own lie ({selectedlie})')
-            return -1
+            return False
 
         self.choices[player_who_selected_lie] = selectedlie
 
@@ -198,21 +230,21 @@ class Game:
                 self.scores[liername] += 1
                 print(f'Lier {liername} with lie {lie} got chosen by {player_who_selected_lie}')
         self.updatescoreorder()
-        return 0
+        return True
 
     def like_recieved(self, client, likes):
         if self.state != 'lieselection':
             print(f'{self.players[client]} tried to like lie {likes} out of time')
-            return -1
+            return False
         player_who_liked = self.players[client]
         if player_who_liked in self.likes:
             print(f'Player {player_who_liked} tried to like another submission ({likes}) '
                   f'despite already having chosen ({self.likes[player_who_liked]})')
-            return -1
+            return False
 
         if player_who_liked in self.lies and likes == self.lies[player_who_liked]:
             print(f'Player {player_who_liked} tried to like their own lie ({likes})')
-            return -1
+            return False
 
         self.likes[player_who_liked] = likes
 
@@ -220,7 +252,7 @@ class Game:
             if lie == likes and liername != player_who_liked:
                 self.likecount[liername] += 1
                 print(f'Player: {player_who_liked} likes {lie} by {liername}')
-        return 0
+        return True
 
     def submitquestion(self, q_and_a):
         try:
@@ -251,10 +283,56 @@ class Game:
         self.state = 'lietome'
         self.scoreorder = []
 
+    def handle_state(self, state):
+        if state in self.states:
+            state_handler_func = getattr(self, f'_handle_{state}')
+            state_handler_func()
 
-# game is a global variable, we hope that threading wont fuck it up
-# and the Global interpreter lock helps us
-game = Game()
+    def _handle_pregame(self):
+        if self.forcestart:
+            self.forcestart = False
+            self.nextquestion()
+            self.updateview()
+
+    def _handle_lietome(self):
+        # total of game.lietime seconds to submit a lie
+        # advance automatically if everyone has submitted a lie and liked an answer!
+        # to temporarily disable timing use:
+        # if time.time() - game.t > game.lietime or len(game.lies) == len(game.players):
+        if len(self.lies) == len(self.players):
+            if len(self.lies) == len(self.players):
+                print('Everyone has submitted their lie, advancing to lie selection')
+            else:
+                print('Time to submit lies is up, advancing to lieselection')
+            self.time()
+            self.state = 'lieselection'
+            self.updateview()
+
+    def _handle_lieselection(self):
+        # numlies*5 + 10 seconds to choose lies and like stuff
+        # OR everyone has submitted a choice
+        if (self.autoadvance and (time.time() - self.t > (len(self.lies) + 1) * self.choicetime)) \
+           or len(self.choices) == len(self.players):
+            print('Time to choose answers lies is up, advancing to scoring')
+            self.time()
+            self.do_scoring()
+            self.state = 'scoring'
+            self.t -= self.scoretime  # rewind time to get instant scoring round
+            self.updateview()
+
+    def _handle_scoring(self):
+        if self.autoadvance and (time.time() - self.t > self.scoretime):
+            # ( 5 if len(game.scoreorder>1) else 10):
+            self.do_scoring()
+
+    def _handle_finalscoring(self):
+        if self.autoadvance and (time.time() - self.t) > (2 * self.scoretime):
+            self.forcestart = True
+            if self.roundcount >= self.questionsperround:
+                self.forcestart = False
+                self.reset()
+            self.state = 'pregame'
+            self.time()
 
 
 def unidecode_allcaps_shorten32(string):
@@ -262,157 +340,80 @@ def unidecode_allcaps_shorten32(string):
     return tmp[0:min(len(tmp), 32)].upper()
 
 
-def updategameview(recipients='all'):
-    global game
-    viewinfo = game.getgamestate()
-    # unicode is needed cause otherwise JS receives it as a Blob type object instead of string
-    ujsonviewinfo = str(json.dumps(viewinfo))
-    if recipients in ('all', 'players'):
-        for player in game.players:
-            player.sendMessage(ujsonviewinfo)
-    if recipients in ('all', 'viewers'):
-        for viewer in game.viewers:
-            viewer.sendMessage(ujsonviewinfo)
-
-
-def scoring(game):
-    print('Scoring called')
-    if not game.scoreorder:  # done, advance state
-        print('Done with scores, advancing automatically to finalscoring')
-        game.state = 'finalscoring'
-        updategameview()
-        game.time()
-    else:
-        game.currentlie = game.scoreorder.pop(0)[0]
-        updategameview()
-        game.time()
-
-
 def handleTick():
-    global game
-    if game.state == 'pregame':
-        if game.forcestart:
-            game.forcestart = False
-            game.nextquestion()
-            updategameview()
-        return
-
-    if game.state == 'lietome':
-        # total of game.lietime seconds to submit a lie
-        # advance automatically if everyone has submitted a lie and liked an answer!
-        # to temporarily disable timing use:
-        # if time.time() - game.t > game.lietime or len(game.lies) == len(game.players):
-        if len(game.lies) == len(game.players):
-            if len(game.lies) == len(game.players):
-                print('Everyone has submitted their lie, advancing to lie selection')
-            else:
-                print('Time to submit lies is up, advancing to lieselection')
-            game.time()
-            game.state = 'lieselection'
-            updategameview()
-            return
-
-    if game.state == 'lieselection':
-        # numlies*5 + 10 seconds to choose lies and like stuff
-        # OR everyone has submitted a choice
-        if (game.autoadvance and (time.time() - game.t > (len(game.lies) + 1) * game.choicetime)) \
-           or len(game.choices) == len(game.players):
-            print('Time to choose answers lies is up, advancing to scoring')
-            game.time()
-            scoring(game)
-            game.state = 'scoring'
-            game.t -= game.scoretime  # rewind time to get instant scoring round
-            updategameview()
-            return
-
-    if game.state == 'scoring':
-        if game.autoadvance and (time.time() - game.t > game.scoretime):
-            # ( 5 if len(game.scoreorder>1) else 10):
-            scoring(game)
-            return
-
-    if game.state == 'finalscoring':
-        if game.autoadvance and time.time() - game.t > 2 * game.scoretime:
-            game.forcestart = True
-            if game.roundcount >= game.questionsperround:
-                game.forcestart = False
-                game.reset()
-            game.state = 'pregame'
-            game.time()
-            return
+    game.handle_state(game.state)
 
 
 class WSFakeageServer(WebSocket):
     def handleMessage(self):
-        global game
         print(f'Message from: {self.client} data: {self.data}')
         self.sendMessage(f'Echo: {self.data}')
         if ':' in self.data:
             command, _, parameter = self.data.partition(':')
+            cmd_handler_func = getattr(self, f'_handle_cmd_{command}')
+            cmd_handler_func(parameter)
 
-            if command == 'loginname':
-                game.addplayer(self, parameter)
-                updategameview('viewers')
+    def _handle_cmd_loginname(self, parameter):
+        game.addplayer(self, parameter)
+        game.updateview('viewers')
 
-            if command == 'forcestart':
-                if game.state == 'pregame':
-                    game.time()
-                    game.forcestart = True
-                else:
-                    print("Cant force start game in progress!")
+    def _handle_cmd_forcestart(self, parameter):
+        if game.state == 'pregame':
+            game.time()
+            game.forcestart = True
+        else:
+            print("Cant force start game in progress!")
 
-            if command == 'view':
-                game.viewers.append(self)
-                updategameview('viewers')
+    def _handle_cmd_view(self, parameter):
+        game.viewers.append(self)
+        game.updateview('viewers')
 
-            if command == 'lie':
-                if game.state != 'lietome':
-                    print(f'{game.players[self]} tried to submit lie {parameter} out of time')
-                else:
-                    if game.players[self] in game.lies:
-                        print(f'{game.players[self]} tried to lie multiple times!')
-                    else:
-                        game.lies[game.players[self]] = unidecode_allcaps_shorten32(parameter)
-                        updategameview('viewers')
+    def _handle_cmd_lie(self, parameter):
+        if game.state != 'lietome':
+            print(f'{game.players[self]} tried to submit lie {parameter} out of time')
+        else:
+            if game.players[self] in game.lies:
+                print(f'{game.players[self]} tried to lie multiple times!')
+            else:
+                game.lies[game.players[self]] = unidecode_allcaps_shorten32(parameter)
+                game.updateview('viewers')
 
-            if command == 'choice':
-                if game.lie_selection_received(self, unidecode_allcaps_shorten32(parameter)) >= 0:
-                    updategameview('viewers')
+    def _handle_cmd_choice(self, parameter):
+        if game.lie_selection_received(self, unidecode_allcaps_shorten32(parameter)):
+            game.updateview('viewers')
 
-            if command == 'like':
-                if game.like_recieved(self, unidecode_allcaps_shorten32(parameter)) >= 0:
-                    updategameview('viewers')
+    def _handle_cmd_like(self, parameter):
+        if game.like_recieved(self, unidecode_allcaps_shorten32(parameter)):
+            game.updateview('viewers')
 
-            if command == 'submitq':
-                game.submitquestion(parameter)
+    def _handle_cmd_submitq(self, parameter):
+        game.submitquestion(parameter)
 
-            if command == 'advancestate':
-                if game.state == 'pregame':
-                    print('Force starting through viewer from', game.state)
-                    game.time()
-                    game.forcestart = True
-                elif game.state == "lieselection":
-                    game.state = 'scoring'
-                    scoring(game)
-                elif game.state == 'scoring':
-                    scoring(game)
-                else:
-                    idx = (game.states.index(game.state) + 1) % len(game.states)
-                    newstate = game.states[max(0, idx)]
-                    print(f'Advancing state through viewer: from {game.state} to {newstate}')
-                    if newstate == 'pregame':
-                        game.forcestart = True
-                    game.time()
-                    game.state = newstate
-                    updategameview()
+    def _handle_cmd_advancestate(self, parameter):
+        if game.state == 'pregame':
+            print('Force starting through viewer from', game.state)
+            game.time()
+            game.forcestart = True
+        elif game.state == "lieselection":
+            game.state = 'scoring'
+            game.do_scoring()
+        elif game.state == 'scoring':
+            game.do_scoring()
+        else:
+            idx = (game.states.index(game.state) + 1) % len(game.states)
+            newstate = game.states[max(0, idx)]
+            print(f'Advancing state through viewer: from {game.state} to {newstate}')
+            if newstate == 'pregame':
+                game.forcestart = True
+            game.time()
+            game.state = newstate
+            game.updateview()
 
     def handleConnected(self):
-        global game
         game.clients.append(self)
         print(f'{self.address} connected')
 
     def handleClose(self):
-        global game
         game.removeplayer(self)
         print(f'{self.address} disconnected, removed')
 
@@ -478,10 +479,12 @@ if __name__ == "__main__":
     with open(websocket_ip_fn, 'w') as wsfile_w:
         wsfile_w.write(''.join(websocket_ip_file_text))
 
-    # load questions:
-    game.autoadvance = args.autoadvance
+    game = Game()
 
+    # load questions:
     game.loadquestions(args.questions)
+
+    game.autoadvance = args.autoadvance
 
     wsserver = SimpleWebSocketServer(my_ip, args.wsport,
                                      WSFakeageServer, selectInterval=0.1)
@@ -489,7 +492,6 @@ if __name__ == "__main__":
 
     httpserver = http.server.HTTPServer((my_ip, args.httpport),
                                         http.server.SimpleHTTPRequestHandler)
-
 
     signal.signal(signal.SIGINT, close_sig_handler)
     threading.Thread(target=httpserver.serve_forever).start()
