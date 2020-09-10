@@ -18,23 +18,20 @@ Devnotes:
 	- [x] Handle reconnection over the course of a game?
 	- [bug] viewer waiting for server not showing joined players.
 '''
-import signal
-import sys
-import time
-import threading
-import json
-import socket
-from SimpleWebSocketServer import WebSocket, SimpleWebSocketServer
-from optparse import OptionParser
+import argparse
 import http.server
-from http.server import SimpleHTTPRequestHandler
+import json
+import signal
+import socket
+import sys
+import threading
+import time
+
 import pyqrcode
+from unidecode import unidecode  #thank me later: https://pypi.org/project/Unidecode/#description
 
-from unidecode import unidecode #thank me later: https://pypi.org/project/Unidecode/#description
-#from gooey import Gooey, GooeyParser
+from SimpleWebSocketServer import WebSocket, SimpleWebSocketServer
 
-#reload(sys)
-#sys.setdefaultencoding('utf8') #https://stackoverflow.com/questions/21129020/how-to-fix-unicodedecodeerror-ascii-codec-cant-decode-byte
 
 class Game:
     def __init__(self):
@@ -432,53 +429,45 @@ class WSFakeageServer(WebSocket):
 
 
 if __name__ == "__main__":
-    parser = OptionParser(usage="usage: %prog [options]", version="%prog 1.0")
-    parser.add_option(
+    parser = argparse.ArgumentParser(usage="usage: %prog [options]")
+    parser.add_argument(
         "--host",
         default='',
         type='string',
-        action="store",
-        dest="host",
         help="hostname (localhost)"
     )
-    parser.add_option(
+    parser.add_argument(
         "--httpport",
         default=8000,
         type='int',
-        action="store",
-        dest="httpport",
         help="Http port (8000)"
     )
-    parser.add_option(
+    parser.add_argument(
         "--wsport",
         default=8001,
         type='int',
-        action="store",
-        dest="wsport",
         help="WebSockets port (8001)"
     )
-    parser.add_option(
+    parser.add_argument(
         "--questions",
         default="questions.tsv",
-        action="store",
-        dest="questions",
+        type=str,
         help="A tab-separated text file with question[tab]answer on each line"
     )
-    parser.add_option(
+    parser.add_argument(
         "--autoadvance",
         action="store_true",
-        dest="autoadvance",
         help="Automatically advance game stages"
     )
-    (options, args) = parser.parse_args()
-    print(f'Options = {options}')
+    args = parser.parse_args()
+    print(f'CLI Arguments: {args}')
 
-    my_ip = options.host
-    if options.host == '':  # automatically generate ws ip
+    my_ip = args.host
+    if args.host == '':  # automatically generate ws ip
         my_ip = socket.gethostbyname(socket.gethostname())
         print(f'No host ip set, using: {my_ip}')
 
-    myurl = f'http://{my_ip}:{options.httpport}'
+    myurl = f'http://{my_ip}:{args.httpport}'
     print(f'Server running at: {myurl}')
     myqrcode = pyqrcode.create(myurl)
     myqrcode.png('qrcode.png', scale=6)
@@ -488,21 +477,22 @@ if __name__ == "__main__":
     websocket_ip_fn = "websocket_ip.js"
     with open(websocket_ip_fn, 'r') as wsfile_r:
         websocket_ip_file_text = wsfile_r.readlines()
-    websocket_ip_file_text[1] = '   return "ws://{}:{}/"\n'.format(my_ip, str(options.wsport))
+    websocket_ip_file_text[1] = '   return "ws://{}:{}/"\n'.format(my_ip, args.wsport)
     print(websocket_ip_file_text[1])
 
     with open(websocket_ip_fn, 'w') as wsfile_w:
         wsfile_w.write(''.join(websocket_ip_file_text))
 
     # load questions:
-    game.autoadvance = options.autoadvance
+    game.autoadvance = args.autoadvance
 
-    game.loadquestions(options.questions)
+    game.loadquestions(args.questions)
 
-    wsserver = SimpleWebSocketServer(my_ip, options.wsport, WSFakeageServer, selectInterval=0.1)
+    wsserver = SimpleWebSocketServer(my_ip, args.wsport, WSFakeageServer, selectInterval=0.1)
     wsserver.handleTick = handleTick
 
-    httpserver = http.server.HTTPServer((my_ip, options.httpport), SimpleHTTPRequestHandler)
+    httpserver = http.server.HTTPServer((my_ip, args.httpport),
+                                        http.server.SimpleHTTPRequestHandler)
 
 
     def close_sig_handler(signal, frame):  # i wonder what this is for...
