@@ -119,7 +119,8 @@ class Game:
         if client in game.players:
             playername = self.players[client]
             if playername in self.scores and playername in self.likecount:
-                self.disconnected_players[playername] = (self.scores[playername], self.likecount[playername])
+                self.disconnected_players[playername] = (self.scores[playername],
+                                                         self.likecount[playername])
             if playername in self.lies:
                 del self.lies[playername]
             if playername in self.likes:
@@ -145,7 +146,8 @@ class Game:
         score_sorted_player_list = []
         for playername in self.players.values():
             score_sorted_player_list.append((playername, self.scores[playername]))
-        score_sorted_player_list = sorted(score_sorted_player_list, key=lambda tup: (-tup[1], tup[0]))
+        score_sorted_player_list = sorted(score_sorted_player_list,
+                                          key=lambda tup: (-tup[1], tup[0]))
 
         for player, _ in score_sorted_player_list:  # what the fuck does this sort on?
             gamestatedict['players'].append({
@@ -171,11 +173,8 @@ class Game:
                     print(f'Lier: {liername} with lie {lie} got chosen by {selectorname}')
             if lieselectioncount > 0 and (lie, lieselectioncount) not in self.scoreorder:
                 self.scoreorder.append((lie, lieselectioncount))
-        #for likername, like in self.likes.iteritems():  # who likes which lie
-        #     for likedname, likedlie in self.lies.iteritems():
-        #         if likername != likedname and like == likedlie:
-        #             print likername, 'liked', likedlie, 'by', likedname
-        self.scoreorder = sorted(self.scoreorder, key=lambda x: x[1], reverse=True)  # score most chosen answer last
+        # score most chosen answer last
+        self.scoreorder = sorted(self.scoreorder, key=lambda x: x[1], reverse=True)
         correctcount = 0
         for _, choice in self.choices.items():
             if choice == self.answer:
@@ -195,7 +194,8 @@ class Game:
                   f'({self.choices[player_who_selected_lie]})')
             return -1
 
-        if player_who_selected_lie in self.lies and self.lies[player_who_selected_lie] == selectedlie:
+        if player_who_selected_lie in self.lies and \
+           self.lies[player_who_selected_lie] == selectedlie:
             print(f'Player {player_who_selected_lie} tried to select their own lie ({selectedlie})')
             return -1
 
@@ -265,8 +265,9 @@ class Game:
         self.scoreorder = []
 
 
-
-game = Game()  # this is a global variable, we hope that threading wont fuck it up and the Global interpreter lock helps us
+# game is a global variable, we hope that threading wont fuck it up
+# and the Global interpreter lock helps us
+game = Game()
 
 
 def unidecode_allcaps_shorten32(string):
@@ -313,7 +314,8 @@ def handleTick():
     if game.state == 'lietome':
         # total of game.lietime seconds to submit a lie
         # advance automatically if everyone has submitted a lie and liked an answer!
-        # if time.time() - game.t > game.lietime or len(game.lies) == len(game.players): #temporarily disable timing
+        # to temporarily disable timing use:
+        # if time.time() - game.t > game.lietime or len(game.lies) == len(game.players):
         if len(game.lies) == len(game.players):
             if len(game.lies) == len(game.players):
                 print('Everyone has submitted their lie, advancing to lie selection')
@@ -327,7 +329,8 @@ def handleTick():
     if game.state == 'lieselection':
         # numlies*5 + 10 seconds to choose lies and like stuff
         # OR everyone has submitted a choice
-        if (game.autoadvance and (time.time() - game.t > (len(game.lies) + 1) * game.choicetime)) or len(game.choices) == len(game.players):
+        if (game.autoadvance and (time.time() - game.t > (len(game.lies) + 1) * game.choicetime)) \
+           or len(game.choices) == len(game.players):
             print('Time to choose answers lies is up, advancing to scoring')
             game.time()
             scoring(game)
@@ -337,7 +340,8 @@ def handleTick():
             return
 
     if game.state == 'scoring':
-        if game.autoadvance and (time.time() - game.t > game.scoretime):  # ( 5 if len(game.scoreorder>1) else 10):
+        if game.autoadvance and (time.time() - game.t > game.scoretime):
+            # ( 5 if len(game.scoreorder>1) else 10):
             scoring(game)
             return
 
@@ -409,7 +413,8 @@ class WSFakeageServer(WebSocket):
                 elif game.state == 'scoring':
                     scoring(game)
                 else:
-                    newstate = game.states[max(0, (game.states.index(game.state)+1)%len(game.states))]
+                    idx = (game.states.index(game.state)+1)%len(game.states)
+                    newstate = game.states[max(0, idx)]
                     print(f'Advancing state through viewer: from {game.state} to {newstate}')
                     if newstate == 'pregame':
                         game.forcestart = True
@@ -430,12 +435,43 @@ class WSFakeageServer(WebSocket):
 
 if __name__ == "__main__":
     parser = OptionParser(usage="usage: %prog [options]", version="%prog 1.0")
-    parser.add_option("--host", default='', type='string', action="store", dest="host", help="hostname (localhost)")
-    parser.add_option("--httpport", default=8000, type='int', action="store", dest="httpport", help="Http port (8000)")
-    parser.add_option("--wsport", default=8001, type='int', action="store", dest="wsport", help="WebSockets port (8001)")
-    parser.add_option("--questions", default="questions.tsv", action="store", dest="questions", help="A tab-separated text file with question[tab]answer on each line")
-    parser.add_option("--autoadvance", action="store_true", dest="autoadvance", help="Automatically advance game stages")
-
+    parser.add_option(
+        "--host",
+        default='',
+        type='string',
+        action="store",
+        dest="host",
+        help="hostname (localhost)"
+    )
+    parser.add_option(
+        "--httpport",
+        default=8000,
+        type='int',
+        action="store",
+        dest="httpport",
+        help="Http port (8000)"
+    )
+    parser.add_option(
+        "--wsport",
+        default=8001,
+        type='int',
+        action="store",
+        dest="wsport",
+        help="WebSockets port (8001)"
+    )
+    parser.add_option(
+        "--questions",
+        default="questions.tsv",
+        action="store",
+        dest="questions",
+        help="A tab-separated text file with question[tab]answer on each line"
+    )
+    parser.add_option(
+        "--autoadvance",
+        action="store_true",
+        dest="autoadvance",
+        help="Automatically advance game stages"
+    )
     (options, args) = parser.parse_args()
     print(f'Options = {options}')
 
