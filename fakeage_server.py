@@ -424,35 +424,35 @@ def close_sig_handler(signum, frame):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(usage="usage: %prog [options]")
+    parser = argparse.ArgumentParser()
     parser.add_argument(
         "--host",
+        type=str,
         default='',
-        type='string',
-        help="hostname (localhost)"
+        help="hostname (localhost)",
     )
     parser.add_argument(
         "--httpport",
+        type=int,
         default=8000,
-        type='int',
-        help="Http port (8000)"
+        help="Http port (8000)",
     )
     parser.add_argument(
         "--wsport",
+        type=int,
         default=8001,
-        type='int',
-        help="WebSockets port (8001)"
+        help="WebSockets port (8001)",
     )
     parser.add_argument(
         "--questions",
-        default="questions.tsv",
         type=str,
-        help="A tab-separated text file with question[tab]answer on each line"
+        default="questions.tsv",
+        help="A tab-separated text file with question[tab]answer on each line",
     )
     parser.add_argument(
         "--autoadvance",
         action="store_true",
-        help="Automatically advance game stages"
+        help="Automatically advance game stages",
     )
     args = parser.parse_args()
     print(f'CLI Arguments: {args}')
