@@ -111,47 +111,44 @@ class Game:
     def removeplayer(self, client):
         if client in self.clients:
             self.clients.remove(client)
+        if client in self.viewers:
+            self.viewers.remove(client)
         if client in game.players:
             playername = self.players[client]
             if playername in self.scores and playername in self.likecount:
                 self.disconnected_players[playername] = (self.scores[playername],
                                                          self.likecount[playername])
-            if playername in self.lies:
-                del self.lies[playername]
-            if playername in self.likes:
-                del self.likes[playername]
-            if playername in self.choices:
-                del self.choices[playername]
-            del self.players[client]
-            if len(self.players) == 0:
+            self.lies.pop(playername, None)
+            self.likes.pop(playername, None)
+            self.choices.pop(playername, None)
+            self.players.pop(client, None)
+            if not self.players:
                 print("Last player left, returning to pregame")
                 self.state = 'pregame'
-            if playername in self.lies:
-                del self.lies[playername]
-            if playername in self.lies:
-                del self.lies[playername]
-        if client in self.viewers:
-            self.viewers.remove(client)
 
     def getgamestate(self):
-        gamestatedict = {"state": self.state, 'players': [],
-                         "question": self.question,
-                         "answer": self.answer,
-                         "currentlie": self.currentlie}
-        score_sorted_player_list = []
-        for playername in self.players.values():
-            score_sorted_player_list.append((playername, self.scores[playername]))
+        gamestatedict = {
+            "state": self.state,
+            "players": [],
+            "question": self.question,
+            "answer": self.answer,
+            "currentlie": self.currentlie,
+        }
+        score_sorted_player_list = [(playername, self.scores[playername])
+                                    for playername in self.players.values()]
         score_sorted_player_list = sorted(score_sorted_player_list,
                                           key=lambda tup: (-tup[1], tup[0]))
 
         for player, _ in score_sorted_player_list:  # what the fuck does this sort on?
-            gamestatedict['players'].append({
-                'name': player,
-                'score': self.scores[player],
-                'lie': self.lies[player] if player in self.lies else None,
-                'likes': self.likes[player] if player in self.likes else None,
-                'likecount': self.likecount[player] if player in self.likecount else 0,
-                'choice': self.choices[player] if player in self.choices else None})
+            gamestatedict['players'].append(
+                {
+                    'name': player,
+                    'score': self.scores[player],
+                    'lie': self.lies.get(player, None),
+                    'likes': self.likes.get(player, None),
+                    'likecount': self.likecount.get(player, 0),
+                    'choice': self.choices.get(player, None),
+                })
         print(f'{len(self.viewers)} viewers, '
               f'{len(self.players)} players, '
               f'viewinfo: {gamestatedict}')
@@ -170,10 +167,7 @@ class Game:
                 self.scoreorder.append((lie, lieselectioncount))
         # score most chosen answer last
         self.scoreorder = sorted(self.scoreorder, key=lambda x: x[1], reverse=True)
-        correctcount = 0
-        for _, choice in self.choices.items():
-            if choice == self.answer:
-                correctcount += 1
+        correctcount = sum([1 for _, choice in self.choices.items() if choice == self.answer])
         self.scoreorder.append((self.answer, correctcount))  # score truth very last
         print(f'game.scoreorder={self.scoreorder}')
         return self.scoreorder
@@ -273,7 +267,6 @@ def unidecode_allcaps_shorten32(string):
 def updategameview(recipients='all'):
     global game
     viewinfo = game.getgamestate()
-
     # unicode is needed cause otherwise JS receives it as a Blob type object instead of string
     ujsonviewinfo = str(json.dumps(viewinfo))
     if recipients in ('all', 'players'):
@@ -291,10 +284,10 @@ def scoring(game):
         game.state = 'finalscoring'
         updategameview()
         game.time()
-        return
-    game.currentlie = game.scoreorder.pop(0)[0]
-    updategameview()
-    game.time()
+    else:
+        game.currentlie = game.scoreorder.pop(0)[0]
+        updategameview()
+        game.time()
 
 
 def handleTick():
@@ -342,12 +335,10 @@ def handleTick():
 
     if game.state == 'finalscoring':
         if game.autoadvance and time.time() - game.t > 2 * game.scoretime:
+            game.forcestart = True
             if game.roundcount >= game.questionsperround:
-                pass
                 game.forcestart = False
                 game.reset()
-            else:
-                game.forcestart = True
             game.state = 'pregame'
             game.time()
             return
@@ -408,7 +399,7 @@ class WSFakeageServer(WebSocket):
                 elif game.state == 'scoring':
                     scoring(game)
                 else:
-                    idx = (game.states.index(game.state)+1)%len(game.states)
+                    idx = (game.states.index(game.state) + 1) % len(game.states)
                     newstate = game.states[max(0, idx)]
                     print(f'Advancing state through viewer: from {game.state} to {newstate}')
                     if newstate == 'pregame':
@@ -418,14 +409,20 @@ class WSFakeageServer(WebSocket):
                     updategameview()
 
     def handleConnected(self):
-        print(f'{self.address} connected')
+        global game
         game.clients.append(self)
+        print(f'{self.address} connected')
 
     def handleClose(self):
-        print(f'{self.address} disconnected, removing')
         global game
         game.removeplayer(self)
+        print(f'{self.address} disconnected, removed')
 
+
+def close_sig_handler(signum, frame):
+    """ Handle close signal (Ctrl+C) """
+    wsserver.close()
+    sys.exit()
 
 
 if __name__ == "__main__":
@@ -488,16 +485,12 @@ if __name__ == "__main__":
 
     game.loadquestions(args.questions)
 
-    wsserver = SimpleWebSocketServer(my_ip, args.wsport, WSFakeageServer, selectInterval=0.1)
+    wsserver = SimpleWebSocketServer(my_ip, args.wsport,
+                                     WSFakeageServer, selectInterval=0.1)
     wsserver.handleTick = handleTick
 
     httpserver = http.server.HTTPServer((my_ip, args.httpport),
                                         http.server.SimpleHTTPRequestHandler)
-
-
-    def close_sig_handler(signal, frame):  # i wonder what this is for...
-        wsserver.close()
-        sys.exit()
 
 
     signal.signal(signal.SIGINT, close_sig_handler)
