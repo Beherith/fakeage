@@ -350,7 +350,12 @@ class WSFakeageServer(WebSocket):
         self.sendMessage(f'Echo: {self.data}')
         if ':' in self.data:
             command, _, parameter = self.data.partition(':')
-            cmd_handler_func = getattr(self, f'_handle_cmd_{command}')
+            # call specific handler function
+            try:
+                cmd_handler_func = getattr(self, f'_handle_cmd_{command}')
+            except AttributeError:
+                print(f'Unsupported command: {command}')
+                return
             cmd_handler_func(parameter)
 
     def _handle_cmd_loginname(self, parameter):
