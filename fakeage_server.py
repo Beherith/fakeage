@@ -195,7 +195,7 @@ class Game(metaclass=Singleton):
         answer = ''
         if self.cur_question:
             question = self.cur_question.question
-            answer = self.cur_question.answer,
+            answer = self.cur_question.answer
         gamestatedict = {
             "state": self.state,
             "players": [],
@@ -246,7 +246,7 @@ class Game(metaclass=Singleton):
             print(f'{self.players[client]} tried to choose lie {selectedlie} out of time')
             return False
         player = self.players[client]
-        if player in self.cur_question.choices:
+        if player.name in self.cur_question.choices:
             print(f'Player {player.name} tried to select another lie '
                   f'({selectedlie}) despite already having chose '
                   f'({self.cur_question.choices[player.name]})')
@@ -277,7 +277,7 @@ class Game(metaclass=Singleton):
             print(f'{self.players[client]} tried to like lie {likes} out of time')
             return False
         player = self.players[client]
-        if player in self.cur_question.likes:
+        if player.name in self.cur_question.likes:
             print(f'Player {player} tried to like another submission ({likes}) '
                   f'despite already having chosen ({self.cur_question.likes[player]})')
             return False
@@ -361,7 +361,7 @@ class Game(metaclass=Singleton):
         # numlies*5 + 10 seconds to choose lies and like stuff
         # OR everyone has submitted a choice
         times_up = (time.time() - self.t) > ((len(self.cur_question.lies) + 1) * self.choicetime)
-        everyone_done = len(self.cur_question.choices) == len(self.players)
+        everyone_done = len(self.cur_question.likes) == len(self.players)
         if self.autoadvance and times_up or everyone_done:
             print('Time to choose answers lies is up, advancing to scoring')
             self.time()
