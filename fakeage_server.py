@@ -80,16 +80,6 @@ class Game(metaclass=Singleton):
     def time(self):
         self.t = time.time()
 
-    def load_questions(self, questionsfilename=''):
-        if questionsfilename != '':
-            self.questionsfilename = questionsfilename
-        with open(self.questionsfilename) as questionsfile:
-            for line in questionsfile.readlines():
-                line = line.strip().split('\t')
-                if len(line) == 2:
-                    self.questions.append([line[0], unidecode_allcaps_shorten32(line[1])])
-        print(f'Loaded {len(self.questions)} questions')
-
     def reset(self):
         self.load_questions()
         self.scores = defaultdict(int)
@@ -143,9 +133,9 @@ class Game(metaclass=Singleton):
             "answer": self.answer,
             "currentlie": self.currentlie,
         }
-        score_sorted_player_list = [(playername, self.scores[playername])
-                                    for playername in self.players.values()]
-        score_sorted_player_list = sorted(score_sorted_player_list,
+        score_player_list = [(playername, self.scores[playername])
+                             for playername in self.players.values()]
+        score_sorted_player_list = sorted(score_player_list,
                                           key=lambda tup: (-tup[1], tup[0]))
 
         for player, _ in score_sorted_player_list:  # what the fuck does this sort on?
@@ -254,12 +244,22 @@ class Game(metaclass=Singleton):
                 print(f'Player: {player_who_liked} likes {lie} by {liername}')
         return True
 
+    def load_questions(self, questionsfilename=''):
+        if questionsfilename != '':
+            self.questionsfilename = questionsfilename
+        with open(self.questionsfilename) as questionsfile:
+            for line in questionsfile.readlines():
+                line = line.strip().split('\t')
+                if len(line) == 2:
+                    self.questions.append([line[0], unidecode_allcaps_shorten32(line[1])])
+        print(f'Loaded {len(self.questions)} questions')
+
     def submit_question(self, q_and_a):
         try:
             questionsfile = open(self.questionsfilename, 'a')
             question, _, answer = unidecode(q_and_a).rpartition(':')
             print(f'Question submitted: {q_and_a}')
-            questionsfile.write(question + '\t' + unidecode_allcaps_shorten32(answer) + '\n')
+            questionsfile.write('{}\t{}\n'.format(question, unidecode_allcaps_shorten32(answer)))
         except UnicodeDecodeError:
             print(f'Failed to decode unicode string {q_and_a}')
         except IOError:
@@ -272,12 +272,10 @@ class Game(metaclass=Singleton):
         if not self.questions:
             self.reset()
         (self.question, self.answer) = self.questions.pop(0)
-
         print(f'The current question and answer are: {self.question} {self.answer}')
         self.choices = {}
         self.likes = {}
         self.lies = {}
-        self.choices = {}
         self.roundcount += 1
         self.currentlie = None
         self.state = 'lietome'
