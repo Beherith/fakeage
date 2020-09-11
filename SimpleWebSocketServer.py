@@ -621,7 +621,7 @@ class SimpleWebSocketServer(object):
          self._handleClose(conn)
 
    def handleTick(self):
-     # print time.time()
+      """Placeholder, replaced in fakeage_server"""
       pass
 
    def _handleClose(self, client):

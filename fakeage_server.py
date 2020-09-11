@@ -126,6 +126,7 @@ class Game(metaclass=Singleton):
                 self.state = 'pregame'
 
     def get_gamestate(self):
+        """ Export current game state in single dictionary """
         gamestatedict = {
             "state": self.state,
             "players": [],
@@ -282,7 +283,9 @@ class Game(metaclass=Singleton):
         self.scoreorder = []
 
     def handle_state(self, state):
+        """ Do actions of a given game state """
         if state in self.states:
+            # call specific handler function
             state_handler_func = getattr(self, f'_handle_{state}')
             state_handler_func()
 
@@ -339,11 +342,17 @@ def unidecode_allcaps_shorten32(string):
 
 
 def handleTick():
+    """ Update Game.
+
+       Called in wsserver.serve_forever() to propagate websocket
+       commands to game.
+    """
     game.handle_state(game.state)
 
 
 class WSFakeageServer(WebSocket):
     def handleMessage(self):
+        """ Handle incoming ws messages """
         print(f'Message from: {self.client} data: {self.data}')
         self.sendMessage(f'Echo: {self.data}')
         if ':' in self.data:
@@ -413,10 +422,12 @@ class WSFakeageServer(WebSocket):
             game.update_view()
 
     def handleConnected(self):
+        """ Handle new ws connection """
         game.clients.append(self)
         print(f'{self.address} connected')
 
     def handleClose(self):
+        """ Handle a ws connection close """
         game.remove_player(self)
         print(f'{self.address} disconnected, removed')
 
