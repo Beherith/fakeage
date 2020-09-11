@@ -80,7 +80,7 @@ class Game(metaclass=Singleton):
     def time(self):
         self.t = time.time()
 
-    def loadquestions(self, questionsfilename=''):
+    def load_questions(self, questionsfilename=''):
         if questionsfilename != '':
             self.questionsfilename = questionsfilename
         with open(self.questionsfilename) as questionsfile:
@@ -91,7 +91,7 @@ class Game(metaclass=Singleton):
         print(f'Loaded {len(self.questions)} questions')
 
     def reset(self):
-        self.loadquestions()
+        self.load_questions()
         self.scores = defaultdict(int)
         self.likecount = defaultdict(int)
         self.roundcount = 0
@@ -100,7 +100,7 @@ class Game(metaclass=Singleton):
         self.lies = {}
         self.choices = {}
 
-    def addplayer(self, client, playername):
+    def add_player(self, client, playername):
         if len(playername) > 32:
             playername = playername[0:32]
         if playername in iter(self.players.values()):
@@ -117,7 +117,7 @@ class Game(metaclass=Singleton):
             print(f'{playername} had joined')
         return True
 
-    def removeplayer(self, client):
+    def remove_player(self, client):
         if client in self.clients:
             self.clients.remove(client)
         if client in self.viewers:
@@ -135,7 +135,7 @@ class Game(metaclass=Singleton):
                 print("Last player left, returning to pregame")
                 self.state = 'pregame'
 
-    def getgamestate(self):
+    def get_gamestate(self):
         gamestatedict = {
             "state": self.state,
             "players": [],
@@ -163,8 +163,8 @@ class Game(metaclass=Singleton):
               f'viewinfo: {gamestatedict}')
         return gamestatedict
 
-    def updateview(self, recipients='all'):
-        viewinfo = self.getgamestate()
+    def update_view(self, recipients='all'):
+        viewinfo = self.get_gamestate()
         # unicode is needed cause otherwise JS receives it as a Blob type object instead of string
         ujsonviewinfo = str(json.dumps(viewinfo))
         if recipients in ('all', 'players'):
@@ -181,10 +181,10 @@ class Game(metaclass=Singleton):
             self.state = 'finalscoring'
         else:
             self.currentlie = self.scoreorder.pop(0)[0]
-        self.updateview()
+        self.update_view()
         self.time()
 
-    def updatescoreorder(self):
+    def update_scoreorder(self):
         self.scoreorder = []  # list of [lie, numtimeselected] lists
         # build a list of lies to score through, and update the scores
         for liername, lie in self.lies.items():  # who chose which lie
@@ -229,7 +229,7 @@ class Game(metaclass=Singleton):
             if lie == selectedlie and liername != player_who_selected_lie:
                 self.scores[liername] += 1
                 print(f'Lier {liername} with lie {lie} got chosen by {player_who_selected_lie}')
-        self.updatescoreorder()
+        self.update_scoreorder()
         return True
 
     def like_recieved(self, client, likes):
@@ -254,7 +254,7 @@ class Game(metaclass=Singleton):
                 print(f'Player: {player_who_liked} likes {lie} by {liername}')
         return True
 
-    def submitquestion(self, q_and_a):
+    def submit_question(self, q_and_a):
         try:
             questionsfile = open(self.questionsfilename, 'a')
             question, _, answer = unidecode(q_and_a).rpartition(':')
@@ -267,7 +267,7 @@ class Game(metaclass=Singleton):
         finally:
             questionsfile.close()
 
-    def nextquestion(self):
+    def load_next_question(self):
         self.time()
         if not self.questions:
             self.reset()
@@ -291,8 +291,8 @@ class Game(metaclass=Singleton):
     def _handle_pregame(self):
         if self.forcestart:
             self.forcestart = False
-            self.nextquestion()
-            self.updateview()
+            self.load_next_question()
+            self.update_view()
 
     def _handle_lietome(self):
         # total of game.lietime seconds to submit a lie
@@ -306,7 +306,7 @@ class Game(metaclass=Singleton):
                 print('Time to submit lies is up, advancing to lieselection')
             self.time()
             self.state = 'lieselection'
-            self.updateview()
+            self.update_view()
 
     def _handle_lieselection(self):
         # numlies*5 + 10 seconds to choose lies and like stuff
@@ -318,7 +318,7 @@ class Game(metaclass=Singleton):
             self.do_scoring()
             self.state = 'scoring'
             self.t -= self.scoretime  # rewind time to get instant scoring round
-            self.updateview()
+            self.update_view()
 
     def _handle_scoring(self):
         if self.autoadvance and (time.time() - self.t > self.scoretime):
@@ -354,8 +354,8 @@ class WSFakeageServer(WebSocket):
             cmd_handler_func(parameter)
 
     def _handle_cmd_loginname(self, parameter):
-        game.addplayer(self, parameter)
-        game.updateview('viewers')
+        game.add_player(self, parameter)
+        game.update_view('viewers')
 
     def _handle_cmd_forcestart(self, parameter):
         if game.state == 'pregame':
@@ -366,7 +366,7 @@ class WSFakeageServer(WebSocket):
 
     def _handle_cmd_view(self, parameter):
         game.viewers.append(self)
-        game.updateview('viewers')
+        game.update_view('viewers')
 
     def _handle_cmd_lie(self, parameter):
         if game.state != 'lietome':
@@ -376,18 +376,18 @@ class WSFakeageServer(WebSocket):
                 print(f'{game.players[self]} tried to lie multiple times!')
             else:
                 game.lies[game.players[self]] = unidecode_allcaps_shorten32(parameter)
-                game.updateview('viewers')
+                game.update_view('viewers')
 
     def _handle_cmd_choice(self, parameter):
         if game.lie_selection_received(self, unidecode_allcaps_shorten32(parameter)):
-            game.updateview('viewers')
+            game.update_view('viewers')
 
     def _handle_cmd_like(self, parameter):
         if game.like_recieved(self, unidecode_allcaps_shorten32(parameter)):
-            game.updateview('viewers')
+            game.update_view('viewers')
 
     def _handle_cmd_submitq(self, parameter):
-        game.submitquestion(parameter)
+        game.submit_question(parameter)
 
     def _handle_cmd_advancestate(self, parameter):
         if game.state == 'pregame':
@@ -407,14 +407,14 @@ class WSFakeageServer(WebSocket):
                 game.forcestart = True
             game.time()
             game.state = newstate
-            game.updateview()
+            game.update_view()
 
     def handleConnected(self):
         game.clients.append(self)
         print(f'{self.address} connected')
 
     def handleClose(self):
-        game.removeplayer(self)
+        game.remove_player(self)
         print(f'{self.address} disconnected, removed')
 
 
@@ -482,10 +482,11 @@ if __name__ == "__main__":
     game = Game()
 
     # load questions:
-    game.loadquestions(args.questions)
+    game.load_questions(args.questions)
 
     game.autoadvance = args.autoadvance
 
+    # start servers:
     wsserver = SimpleWebSocketServer(my_ip, args.wsport,
                                      WSFakeageServer, selectInterval=0.1)
     wsserver.handleTick = handleTick
