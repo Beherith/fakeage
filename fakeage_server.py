@@ -418,9 +418,21 @@ class WSFakeageServer(WebSocket):
         print(f'{self.address} disconnected, removed')
 
 
+def write_websocket_ip_to_file(websocket_ip_fn="websocket_ip.js"):
+    """ Write websocket URL to a file """
+    with open(websocket_ip_fn, 'r') as wsfile_r:
+        websocket_ip_file_text = wsfile_r.readlines()
+    websocket_ip_file_text[1] = '   return "ws://{}:{}/"\n'.format(my_ip, args.wsport)
+    print(websocket_ip_file_text[1])
+
+    with open(websocket_ip_fn, 'w') as wsfile_w:
+        wsfile_w.write(''.join(websocket_ip_file_text))
+
+
 def close_sig_handler(signum, frame):
     """ Handle close signal (Ctrl+C) """
     wsserver.close()
+    httpserver.shutdown()
     sys.exit()
 
 
@@ -468,16 +480,9 @@ if __name__ == "__main__":
     myqrcode = pyqrcode.create(myurl)
     myqrcode.png('qrcode.png', scale=6)
 
-    # Set the IP in the js file on each launch of the server.
-    # This seems pretty hacky, but i couldnt think of anything better
-    websocket_ip_fn = "websocket_ip.js"
-    with open(websocket_ip_fn, 'r') as wsfile_r:
-        websocket_ip_file_text = wsfile_r.readlines()
-    websocket_ip_file_text[1] = '   return "ws://{}:{}/"\n'.format(my_ip, args.wsport)
-    print(websocket_ip_file_text[1])
-
-    with open(websocket_ip_fn, 'w') as wsfile_w:
-        wsfile_w.write(''.join(websocket_ip_file_text))
+    # Set the IP in the js file on each launch of the server.  This
+    # seems pretty hacky, but i couldnt think of anything better
+    write_websocket_ip_to_file("websocket_ip.js")
 
     game = Game()
 
