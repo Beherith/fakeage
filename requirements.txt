@@ -1,0 +1,3 @@
+pypng
+PyQRCode
+Unidecode
