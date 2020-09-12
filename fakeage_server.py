@@ -49,6 +49,7 @@ class Question:
     def __init__(self, question, answer, likes=None, lies=None, choices=None):
         self.question = question
         self.answer = answer
+        # likes,lies and choices dicts use player.name as key
         self.likes = likes or {}
         self.lies = lies or {}
         self.choices = choices or {}
@@ -208,7 +209,7 @@ class Game(metaclass=Singleton):
         for player in score_sorted_player_list:
             player_info = player.get_info()
             if self.cur_question:
-                player_info.update(self.cur_question.get_player_info(player))
+                player_info.update(self.cur_question.get_player_info(player.name))
             gamestatedict['players'].append(player_info)
         print(f'{len(self.viewers)} viewers, '
               f'{len(self.players)} players, '
@@ -286,7 +287,7 @@ class Game(metaclass=Singleton):
             print(f'Player {player} tried to like their own lie ({likes})')
             return False
 
-        self.cur_question.likes[player] = likes
+        self.cur_question.likes[player.name] = likes
 
         for liername, lie in self.cur_question.lies.items():  # who chose which lie
             if lie == likes and liername != player.name:
@@ -438,7 +439,7 @@ class WSFakeageServer(WebSocket):
                 print(f'{game.players[self]} tried to lie multiple times!')
             else:
                 # register lie
-                game.cur_question.lies[player] = unidecode_allcaps_shorten32(parameter)
+                game.cur_question.lies[player.name] = unidecode_allcaps_shorten32(parameter)
                 game.update_view('viewers')
 
     def _handle_cmd_choice(self, parameter):
@@ -572,4 +573,4 @@ if __name__ == "__main__":
 
     print("Servers started.")
     while True:
-        time.sleep(0.1)
+        time.sleep(2)
