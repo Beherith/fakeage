@@ -224,7 +224,7 @@ class Game(metaclass=Singleton):
         viewinfo = self.get_gamestate()
         # unicode is needed cause otherwise JS receives
         # it as a Blob type object instead of string
-        ujsonviewinfo = str(json.dumps(viewinfo))
+        ujsonviewinfo = json.dumps(viewinfo)
         if recipients in ('all', 'players'):
             for playerclient in self.players:
                 playerclient.sendMessage(ujsonviewinfo)
@@ -300,7 +300,7 @@ class Game(metaclass=Singleton):
     def load_questions(self, questionsfilename=''):
         if questionsfilename != '':
             self.questionsfilename = questionsfilename
-        with open(self.questionsfilename, 'r') as questionsfile:
+        with open(self.questionsfilename, 'r', encoding='utf-8') as questionsfile:
             for line in questionsfile.readlines():
                 line = line.strip().split('\t')
                 if len(line) == 2:
