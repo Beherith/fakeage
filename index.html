@@ -128,7 +128,7 @@ function init(){
 		}
 		if (jsonobj.state == 'lietome'){
 			if (viewer){
-				document.getElementById("viewerdivhead").innerHTML = jsonobj.question+'<br>Enter your lies<br>';
+				document.getElementById("viewerdivhead").innerHTML = jsonobj.question+'<br>Enter your lies:<br>';
 
 				var pre = document.createElement("p");
 				var playerlist = [];
@@ -198,15 +198,15 @@ function init(){
 			}
 			
 			if (jsonobj.currentlie != jsonobj.answer){
-				pretext += jsonobj.currentlie + " is a lie! Submitted by: " + playerswholiedthis.join(", ")+"<br> Players fooled: "+playerswhochosethis.join(", ");
+				pretext += jsonobj.currentlie + " <i> is a lie! Submitted by: </i>  " + playerswholiedthis.join(", ")+"<br> <i> Players fooled:</i>  "+playerswhochosethis.join(", ");
 			}else{
-				pretext += jsonobj.currentlie + " is the truth! <br>"
-				if (playerswhochosethis.length >0) pretext += " Players correct: " + playerswhochosethis.join(", ");
+				pretext += jsonobj.currentlie + " <i> is the truth! </i> <br>"
+				if (playerswhochosethis.length >0) pretext += "<i> Players correct: </i>" + playerswhochosethis.join(", ");
 				else pretext += "No players were correct!";
 			}
 			
 			if (playerswholikedthis.length > 0){
-				pretext += "<br> Players who like this answer: "+playerswholikedthis.join(", ");
+				pretext += "<br> <i> Players who like this answer: </i>"+playerswholikedthis.join(", ");
 			}
 			pre.innerHTML = pretext;
 			output.appendChild(pre);
@@ -214,7 +214,7 @@ function init(){
 		};
 		if (jsonobj.state == "finalscoring") {//scoring is identical in viewer and player
 			//var pre = document.createElement("h1");
-			document.getElementById("viewerdivhead").innerHTML = jsonobj.question + ' (' + jsonobj.answer + ')' + ' Total scores:';
+			document.getElementById("viewerdivhead").innerHTML = jsonobj.question + ' (' + jsonobj.answer + ')' + ' <br> Total scores:';
 			//console.log(pre.innerHTML);
 			//output.appendChild(pre);
 
@@ -239,7 +239,7 @@ function init(){
 
 			var stepsize = Math.ceil(jsonobj.players.length);
 			var numtables = 1;
-			if (viewer) {
+			if (viewer && jsonobj.players.length >=3 ) {
 				numtables = 3;
 				stepsize = Math.ceil(jsonobj.players.length/3.0);
 			}
