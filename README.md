@@ -10,6 +10,19 @@ All input from players will be butchered to remove all non [A-Z] [0-9] character
 Supports players rejoining with the same names, supports liking of submissions.   
 1 point for getting the correct answer, 1 point for fooling others.   
 
+### How to add questions
+
+Questions are in a tab-separated format, one line per question with the fields [question]\t[answer]\t[author (optional)]\n
+
+#### Image or Video questions (NEW!)
+You can add an image to any question by adding the following html tag (without backtick quotes!) to the question, and adding the image to the /img folder:
+
+What is the namg of this character? `<br/><img src="img/myimage.jpg">` \t ANSWER
+
+Video is similar, like so:
+
+Is this a Video? `<br/><video controls width="640"><source src="img/intro_movie.webm" type="video/webm">  Sorry, your browser doesn't support embedded videos. </video>`\tYES
+
 
 ### To build or dev
 
