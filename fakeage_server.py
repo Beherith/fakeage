@@ -154,7 +154,7 @@ class Game(metaclass=Singleton):
         self.questions = []
         self.load_questions()
         # reset players
-        for _, player in self.players.values():
+        for player in self.players.values():
             player.reset()
         # reset game-relevant stuff
         self.roundcount = 0

@@ -342,7 +342,7 @@ function selectlie(me){
 	for (var l = 0; l<lies.length; l ++){
 		$("#selectliediv").append('<a data-role="button" id="likeliebtn" onclick=\'like("'+lies[l] +'")\' data-inline="true">'+lies[l]+ '</a><br>\n').trigger('create');
 	}
-	$("#selectliediv").append('<h1>___</h1>');
+	$("#selectliediv").append('<h1>  &nbsp;</h1>');
 }
 function like(me){
 	if (me == mylie){ // you cant select your own lie!
