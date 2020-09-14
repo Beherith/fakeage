@@ -460,6 +460,7 @@ class WSFakeageServer(WebSocket):
             game.forcestart = True
         elif game.state == "lieselection":
             game.state = 'scoring'
+            game.do_scoring()
         elif game.state == 'scoring':
             game.do_scoring()
         else:
