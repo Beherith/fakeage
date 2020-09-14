@@ -660,6 +660,7 @@ class SimpleWebSocketServer(object):
                       raise Exception('received client close')
 
          except Exception as n:
+            print(n)
             self._handleClose(client)
             del self.connections[ready]
             self.listeners.remove(ready)
@@ -684,14 +685,21 @@ class SimpleWebSocketServer(object):
             try:
                client._handleData()
             except Exception as n:
+               print(n)
                self._handleClose(client)
                del self.connections[ready]
                self.listeners.remove(ready)
 
       for failed in xList:
          if failed == self.serversocket:
-            self.close()
-            raise Exception('server socket failed')
+            try:
+                self.close()
+                raise Exception('server socket failed')
+            except Exception as n:
+                print (n)
+                self._handleClose(client)
+                del self.connections[ready]
+                self.listeners.remove(ready)
          else:
             if failed not in self.connections:
                continue
