@@ -44,6 +44,10 @@ var eckspng = "<img alt =\"X\" src=\"/src/ecks.png\">";
 var likepng = "<img alt = \"likes\" src=\"/src/like.png\">";
 var cuppng = "<img alt = \"pts\" src=\"/src/cup.png\">";
 
+//function get_websocket_ip(){
+//	return "ws://192.168.43.13:8001/"
+//}
+
 function latinize(nonlatin){
 	//This function is broken, does different shit on all browsers! FUCK THIS HORRIBLE MESS! I HATE FUCKING NON-ASCII CHARACTERS!
 	var latin_map = {'É':'E','Á':'A','Ű':'U','Ü':'U','Ö':'O','Ő':'O','Ú':'U','Í':'I','Ó':'O','é':'e','á':'a','ű':'u','ü':'u','ö':'o','ő':'o','ú':'u','í':'i','ó':'o'};
@@ -115,8 +119,8 @@ function init(){
 		var output = document.getElementById("viewerdivbody");
 		output.innerHTML = ''; //clear body
 		if (jsonobj.state == 'pregame' && viewer){
-			document.getElementById("viewerdivhead").innerHTML = '<table width="100%" style="margin: 10px;"> <tr>  <td><img src="qrcode.png" alt = "QR code"> </td> <td> Waiting for players to join at '+
-					gameaddress +'<br/> Total players:' + jsonobj.players.length + '</td></tr></table>';
+			document.getElementById("viewerdivhead").innerHTML = '<table width="100%" style="margin: 10px;"> <tr>  <td><img src="qrcode.png" alt = "QR code"> </td> <td> Varakozunk a tobbi jatekosra: '+
+					gameaddress +'<br/> Jatekosok:' + jsonobj.players.length + '</td></tr></table>';
 			var pre = document.createElement("b");
 			var playerlist = []
 			for (var player = 0; player<jsonobj.players.length; player ++){
@@ -128,7 +132,7 @@ function init(){
 		}
 		if (jsonobj.state == 'lietome'){
 			if (viewer){
-				document.getElementById("viewerdivhead").innerHTML = jsonobj.question+'<br>Enter your lies:<br>';
+				document.getElementById("viewerdivhead").innerHTML = jsonobj.question+'<br>Add meg a hazugsagod!<br>';
 
 				var pre = document.createElement("p");
 				var playerlist = [];
@@ -148,7 +152,7 @@ function init(){
 		if (jsonobj.state == 'lieselection' ){
 			if (viewer){
 
-				document.getElementById("viewerdivhead").innerHTML = jsonobj.question+'<br>Select the truth:<br>';
+				document.getElementById("viewerdivhead").innerHTML = jsonobj.question+'<br>Valaszd ki az igazat:<br>';
 				//display all lies
 
 				lies = sortlies();
@@ -172,18 +176,18 @@ function init(){
 			}else{ //show lie selector ui
 				showonly("#selectliediv");
 				output = document.getElementById("selectliediv") ;
-				output.innerHTML = '<h1>'+jsonobj.question+'<br>Select the truth</h1>';
+				output.innerHTML = '<h1>'+jsonobj.question+'<br>Valaszd ki az igazat!</h1>';
 				// sort lies in alphabetical order to prevent the truth from floating upper-alpha
 				lies = sortlies();
 				for (var l = 0; l<lies.length; l ++){
 					$("#selectliediv").append('<a data-role="button" id="selectliebtn" onclick=\'selectlie("'+lies[l] +'")\' data-inline="true">'+lies[l]+ '</a><br>\n').trigger('create');
 				}
-				$("#selectliediv").append('<h1>&nbsp</h1>'); //to make sure last lie isnt hidden
+				$("#selectliediv").append('<h1>___</h1>');
 			}
 		};
 		if (jsonobj.state == 'scoring'){ //scoring is identical in viewer and player
 			showonly("#viewerdiv");
-			document.getElementById("viewerdivhead").innerHTML = "Scoring";
+			document.getElementById("viewerdivhead").innerHTML = "Pontozas";
 			var pre = document.createElement("h1");
 			var playerswholiedthis = [];
 			var playerswhochosethis = [];
@@ -198,15 +202,15 @@ function init(){
 			}
 			
 			if (jsonobj.currentlie != jsonobj.answer){
-				pretext += jsonobj.currentlie + " <i> is a lie! Submitted by: </i>  " + playerswholiedthis.join(", ")+"<br> <i> Players fooled:</i>  "+playerswhochosethis.join(", ");
+				pretext += jsonobj.currentlie + " egy hazugsag! Bekuldte: " + playerswholiedthis.join(", ")+"<br> Jatekosok akik elhittek: "+playerswhochosethis.join(", ");
 			}else{
-				pretext += jsonobj.currentlie + " <i> is the truth! </i> <br>"
-				if (playerswhochosethis.length >0) pretext += "<i> Players correct: </i>" + playerswhochosethis.join(", ");
-				else pretext += "No players were correct!";
+				pretext += jsonobj.currentlie + " az igazsag! <br>"
+				if (playerswhochosethis.length >0) pretext += " A helyesen valaszolo jatekosok: " + playerswhochosethis.join(", ");
+				else pretext += "Senki nem tudta az igazat!";
 			}
 			
 			if (playerswholikedthis.length > 0){
-				pretext += "<br> <i> Players who like this answer: </i>"+playerswholikedthis.join(", ");
+				pretext += "<br> Jatekosok akiknek tetszett a valasz: "+playerswholikedthis.join(", ");
 			}
 			pre.innerHTML = pretext;
 			output.appendChild(pre);
@@ -214,7 +218,7 @@ function init(){
 		};
 		if (jsonobj.state == "finalscoring") {//scoring is identical in viewer and player
 			//var pre = document.createElement("h1");
-			document.getElementById("viewerdivhead").innerHTML = jsonobj.question + ' (' + jsonobj.answer + ')' + ' <br> Total scores:';
+			document.getElementById("viewerdivhead").innerHTML = jsonobj.question + ' (' + jsonobj.answer + ')' + ' Pontok osszesitese:';
 			//console.log(pre.innerHTML);
 			//output.appendChild(pre);
 
@@ -239,13 +243,13 @@ function init(){
 
 			var stepsize = Math.ceil(jsonobj.players.length);
 			var numtables = 1;
-			if (viewer && jsonobj.players.length >=3 ) {
+			if (viewer) {
 				numtables = 3;
 				stepsize = Math.ceil(jsonobj.players.length/3.0);
 			}
 			for (var tablecount = 0; tablecount < numtables; tablecount++) {
 				tabletext += '<td valign="top">';
-				tabletext += "<table border = 0><thead><tr><th>#</th><th>Player</th><th>Lie</th><th>"+cuppng+"</th><th>"+likepng+"</th></tr></thead><tbody class=\"ui-widget-content\">";
+				tabletext += "<table border = 0><thead><tr><th>#</th><th>Jatekos</th><th>Hazugsaga</th><th>"+cuppng+"</th><th>"+likepng+"</th></tr></thead><tbody class=\"ui-widget-content\">";
 
 				for (var player = stepsize *tablecount ; player < Math.min(jsonobj.players.length, (stepsize*(tablecount+1))); player++) {
 					var p = jsonobj.players[player];
@@ -317,7 +321,7 @@ function lie(){
 		connection.send("lie:"+mylie);
 		$("#mylie").hide();
 		$("#liebtn").hide();
-		document.getElementById("questionh").innerHTML = "Lie submitted";
+		document.getElementById("questionh").innerHTML = "Hazugsag bekuldve";
 	}
 }
 function sortlies(){
@@ -330,28 +334,28 @@ function sortlies(){
 }
 function selectlie(me){
 	if (me == mylie){ // you cant select your own lie!
-		$("#selectliediv").append('<h1>You cant select your own lie!</h1>\n').trigger('create');
+		$("#selectliediv").append('<h1>Nem valaszthatod a sajat hazugsagodat, valassz mast!</h1>\n').trigger('create');
 		return;
 	}
-	console.log("Selected lie:",me);
+	console.log("Kivalasztott hazugsag:",me);
 	connection.send("choice:"+me);
 	output = document.getElementById("selectliediv") ;
-	output.innerHTML = '<h1>Choice submitted.<br><br>Like the answers for:<br><br>'+jsonobj.question+'</h1>';
+	output.innerHTML = '<h1>Valasztasod bekuldve.<br><br>Valaszd ki a szerinted legkreativabb valaszt:<br><br>'+jsonobj.question+'</h1>';
 	// sort lies in alphabetical order to prevent the truth from floating upper-alpha
 	lies = sortlies();
 	for (var l = 0; l<lies.length; l ++){
 		$("#selectliediv").append('<a data-role="button" id="likeliebtn" onclick=\'like("'+lies[l] +'")\' data-inline="true">'+lies[l]+ '</a><br>\n').trigger('create');
 	}
-	$("#selectliediv").append('<h1>  &nbsp;</h1>');
+	$("#selectliediv").append('<h1>___</h1>');
 }
 function like(me){
 	if (me == mylie){ // you cant select your own lie!
-		$("#selectliediv").append('<h1>You cant like your own lie!</h1>\n').trigger('create');
+		$("#selectliediv").append('<h1>A sajat hazugsagodat nem valaszthatod!</h1>\n').trigger('create');
 		return;
 	}
 	console.log("liked:"+me);
 	connection.send('like:'+me);
-	document.getElementById("selectliediv").innerHTML = '<h1>Waiting for everyone else...</h1>' ;
+	document.getElementById("selectliediv").innerHTML = '<h1>Varakozas a tobbiekre...</h1>' ;
 
 }
 
@@ -373,7 +377,7 @@ function showquestion(q){
 	showonly("#enterliediv");
 	$("#mylie").show();
 	$("#liebtn").show();
-	$("#mylie").val("RandomLie"+Math.floor(Math.random()*1000));
+	$("#mylie").val("Ird be a hazugsagodat"+Math.floor(Math.random()*1000));
 	document.getElementById("questionh").innerHTML = q;
 }
 
@@ -418,7 +422,7 @@ function advancestate(){
 			<h1 id="questionh">Enter your lie!</h1>
 			<div data-role="fieldcontain">
 				<input type="text" id="mylie" value="I cant think of anything.." />
-				<a data-role="button" id="liebtn" onclick="lie()" data-inline="true">Submit lie</a>	
+				<a data-role="button" id="liebtn" onclick="lie()" data-inline="true">Hazugsag bekuldese</a>
 			</div>
 		</div>
 		
@@ -433,11 +437,6 @@ function advancestate(){
 				nobody in yet
 			</div>
 		</div>
-
-		<div id="emptyfooterhidingdiv">
-			<h1>  &nbsp;</h1>
-		</div>
-
 		<footer>
 		<div data-role="footer" class ="ui-footer-fixed">
 			<h4> Fakeage by PT mysterme@gmail.com <a data-role="button" id="advancestatebtn" data-icon="arrow-r" data-id="myfooter"  onclick="advancestate()" data-inline="true">Next</a> </h4>
