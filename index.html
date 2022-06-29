@@ -53,9 +53,13 @@ function latinize(nonlatin){
 		out+= latin_map[nonlatin[i]]||nonlatin[i];
 	}
 	console.log(out);
-	return out
+	return out;
 }
 
+function randomcase(text){
+	var out = text.split('').map((c) => Math.round(Math.random()) ? c.toUpperCase() : c.toLowerCase()).join('');
+	return out;
+}
 
 function create_table_from_list_of_html_codes(mylist){
 	// a general good idea is to make the table even sized.
@@ -81,7 +85,6 @@ function create_table_from_list_of_html_codes(mylist){
 	t = t+ '</table>';
 	return t;
 }
-
 
 function init(){
 	ipValue = get_websocket_ip();
@@ -184,15 +187,15 @@ function init(){
 			var playerswholiedthis = [];
 			var playerswhochosethis = [];
 			var playerswholikedthis = [];
-			
+
 			var pretext = jsonobj.question + "<br><br>";
-			
+
 			for (var player = 0; player<jsonobj.players.length; player ++){
 				if (jsonobj.players[player].lie == jsonobj.currentlie)    playerswholiedthis.push(jsonobj.players[player].name);
 				if (jsonobj.players[player].choice == jsonobj.currentlie) playerswhochosethis.push(jsonobj.players[player].name);
 				if (jsonobj.players[player].likes == jsonobj.currentlie)  playerswholikedthis.push(jsonobj.players[player].name);
 			}
-			
+
 			if (jsonobj.currentlie != jsonobj.answer){
 				pretext += jsonobj.currentlie + " <i> egy hazugsag! Bekuldte: </i>  " + playerswholiedthis.join(", ")+"<br> <i> Jatekosok akik elhittek: </i>  "+playerswhochosethis.join(", ");
 			}else{
@@ -200,7 +203,7 @@ function init(){
 				if (playerswhochosethis.length >0) pretext += "<i> A helyesen valaszolo jatekosok: </i>" + playerswhochosethis.join(", ");
 				else pretext += "Senki nem tudta az igazat!";
 			}
-			
+
 			if (playerswholikedthis.length > 0){
 				pretext += "<br> <i> Jatekosok akiknek tetszett a valasz: </i>"+playerswholikedthis.join(", ");
 			}
@@ -283,14 +286,17 @@ function login(){
 		$("#logindiv").append('<br><a data-role="button" id="forcestart" onclick="forcestart()" data-inline="true">Force start game</a><br>\n').trigger('create');
 	}
 	else{
-		$("#logindiv").append('<br><a data-role="button" id="forcestart" data-inline="true">Scream!</a><br>\n').trigger('create');
+		$("#logindiv").append('<br><a data-role="button" id="forcestart" data-inline="true" onclick="scream()">Scream!</a><br>\n').trigger('create');
 	}
-	$("#logindiv").append('<img src="qrcode.png" alt = "QR code">').trigger('create');
+	$("#logindiv").append('<img src="qrcode.png" alt = "QR code"></br>').trigger('create');
 	$("#loginbtn").hide();
 	$("#loginfieldcontain").hide();
 	$("#viewbtn").hide();
 	$("#submitdiv").hide();
 	$("#advancestatebtn").hide();
+}
+function scream(){
+	$("#logindiv").append("<b>"+randomcase("Scream")+"</b> ").trigger('create');
 }
 function view(){
 	connection.send("view:None");
@@ -301,10 +307,12 @@ function view(){
 	$("#advancestatebtn").show();
 	viewer = true;
 }
+
 function forcestart(){
 	connection.send("forcestart:"+loginname);
 	console.log("Forced start:" + loginname);
 }
+
 function lie(){
 	mylie = $("#mylie").val().toUpperCase();
 	if (mylie == jsonobj.answer){
@@ -316,6 +324,7 @@ function lie(){
 		document.getElementById("questionh").innerHTML = "Hazugsag bekuldve";
 	}
 }
+
 function sortlies(){
 	var sortedlies = [jsonobj.answer];
 	for (var player = 0; player<jsonobj.players.length; player ++){
@@ -324,6 +333,7 @@ function sortlies(){
 	sortedlies.sort();
 	return sortedlies;
 }
+
 function selectlie(me){
 	if (me == mylie){ // you cant select your own lie!
 		$("#selectliediv").append('<h1>Nem valaszthatod a sajat hazugsagodat, valassz mast!</h1>\n').trigger('create');
@@ -340,6 +350,7 @@ function selectlie(me){
 	}
 	$("#selectliediv").append('<h1>  &nbsp;</h1>');
 }
+
 function like(me){
 	if (me == mylie){ // you cant select your own lie!
 		$("#selectliediv").append('<h1>A sajat hazugsagodat nem valaszthatod!</h1>\n').trigger('create');
@@ -355,13 +366,16 @@ function submitq(){
 	connection.send('submitq:'+$("#submitquestion").val()+":"+$("#submitanswer").val());
 	$("#submitdiv").hide();
 }
+
 function showonly(divtoshow){
 	var divs = ['#enterliediv','#selectliediv','#logindiv','#viewerdiv'];
 	for (var d =0; d < divs.length; d++){
 		if (divtoshow == divs[d]){
 			$(divs[d]).slideDown("slow");
 		}
-		else $(divs[d]).slideUp("slow");
+		else{
+			$(divs[d]).slideUp("slow");
+		}
 	}
 }
 function showquestion(q){
@@ -374,14 +388,14 @@ function showquestion(q){
 }
 
 function advancestate(){
-    if (viewer) {
-        connection.send('advancestate:0');
-        console.log("Forcing state advance");
-    }
+	if (viewer) {
+		connection.send('advancestate:0');
+		console.log("Forcing state advance");
+	}
 }
 
 </script>
-</head>  
+</head>
 	<body>
 		<div data-role="page" id="page1">
 		<div id="pageheader" data-role="header">
@@ -392,13 +406,13 @@ function advancestate(){
 			<div data-role="fieldcontain" id ="loginfieldcontain">
 				<label for="loginname">My name is</label>
 				<input type="text" id="loginname" value="Dumbfuck" />
-				<a data-role="button" id="loginbtn" onclick="login()" data-inline="true">Play!</a>	
+				<a data-role="button" id="loginbtn" onclick="login()" data-inline="true">Play!</a>
 			</div>
 			<div data-role="fieldcontain">
 				<a data-role="button" id="viewbtn" onclick="view()" data-inline="true">View only</a>
 			</div>
 		</div>
-		
+
 		<div id="submitdiv">
 			<h1>Submit a question:</h1>
 			<div data-role="fieldcontain">
@@ -406,23 +420,23 @@ function advancestate(){
 				<input type="text" id="submitquestion" value="Enter the ___ you would like to submit." />
 				<label for="submitanswer">Answer</label>
 				<input type="text" id="submitanswer" value="question" />
-				<a data-role="button" id="submitbtn" onclick="submitq()" data-inline="true">Submit question</a>	
+				<a data-role="button" id="submitbtn" onclick="submitq()" data-inline="true">Submit question</a>
 			</div>
 		</div>
-		
+
 		<div id="enterliediv">
 			<h1 id="questionh">Enter your lie!</h1>
 			<div data-role="fieldcontain">
 				<input type="text" id="mylie" value="I cant think of anything.." />
-				<a data-role="button" id="liebtn" onclick="lie()" data-inline="true">Submit lie</a>	
+				<a data-role="button" id="liebtn" onclick="lie()" data-inline="true">Submit lie</a>
 			</div>
 		</div>
-		
-		<div id="selectliediv">	
+
+		<div id="selectliediv">
 			<h1 id = 'selectlieh'>Select the answer which you think is the truth!</h1>
 		</div>
-		
-		<div id="viewerdiv">	
+
+		<div id="viewerdiv">
 			<h1 id ='viewerdivhead'> <img src="qrcode.png" alt = "QR code"> View waiting for server..</h1>
 
 			<div id = "viewerdivbody">
