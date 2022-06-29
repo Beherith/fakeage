@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
-    <head>
-        <title>Fakeage Player</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+<head>
+	<title>Fakeage Player</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
 	<link href="/src/css/jquery.mobile-1.4.5.min.css" rel="stylesheet" />
 	<script src="/websocket_ip.js"></script>
 	<script src="/src/jquery-1.11.3.min.js"></script>
@@ -263,6 +263,7 @@ function init(){
 
 	}
 }
+
 function onError(evt){
 	$("#viewerdiv").show(); //because showonly has no effect here, wtf?
 	document.getElementById("viewerdivhead").innerHTML = 'WebSockets Error:' + evt.data + '\\n';
@@ -275,6 +276,7 @@ function onClose(evt){
 	document.getElementById("viewerdivhead").innerHTML = 'WebSockets Closed ';
 	console.log("disconnected\n");
 }
+
 function login(){
 	loginname = $("#loginname").val();
 	connection.send("loginname:"+loginname);
@@ -295,9 +297,11 @@ function login(){
 	$("#submitdiv").hide();
 	$("#advancestatebtn").hide();
 }
+
 function scream(){
 	$("#logindiv").append("<b>"+randomcase("Scream")+"</b> ").trigger('create');
 }
+
 function view(){
 	connection.send("view:None");
 	console.log("Logged in as:" + loginname);
@@ -396,64 +400,64 @@ function advancestate(){
 
 </script>
 </head>
-	<body>
-		<div data-role="page" id="page1">
-		<div id="pageheader" data-role="header">
-			<h1>Fakeage</h1>
+<body>
+	<div data-role="page" id="page1">
+	<div id="pageheader" data-role="header">
+		<h1>Fakeage</h1>
+	</div>
+	<div id="logindiv">
+		<h1>Enter your name if you wish to play!</h1>
+		<div data-role="fieldcontain" id ="loginfieldcontain">
+			<label for="loginname">My name is</label>
+			<input type="text" id="loginname" value="Dumbfuck" />
+			<a data-role="button" id="loginbtn" onclick="login()" data-inline="true">Play!</a>
 		</div>
-		<div id="logindiv">
-			<h1>Enter your name if you wish to play!</h1>
-			<div data-role="fieldcontain" id ="loginfieldcontain">
-				<label for="loginname">My name is</label>
-				<input type="text" id="loginname" value="Dumbfuck" />
-				<a data-role="button" id="loginbtn" onclick="login()" data-inline="true">Play!</a>
-			</div>
-			<div data-role="fieldcontain">
-				<a data-role="button" id="viewbtn" onclick="view()" data-inline="true">View only</a>
-			</div>
+		<div data-role="fieldcontain">
+			<a data-role="button" id="viewbtn" onclick="view()" data-inline="true">View only</a>
 		</div>
+	</div>
 
-		<div id="submitdiv">
-			<h1>Submit a question:</h1>
-			<div data-role="fieldcontain">
-				<label for="submitquestion">Question</label>
-				<input type="text" id="submitquestion" value="Enter the ___ you would like to submit." />
-				<label for="submitanswer">Answer</label>
-				<input type="text" id="submitanswer" value="question" />
-				<a data-role="button" id="submitbtn" onclick="submitq()" data-inline="true">Submit question</a>
-			</div>
+	<div id="submitdiv">
+		<h1>Submit a question:</h1>
+		<div data-role="fieldcontain">
+			<label for="submitquestion">Question</label>
+			<input type="text" id="submitquestion" value="Enter the ___ you would like to submit." />
+			<label for="submitanswer">Answer</label>
+			<input type="text" id="submitanswer" value="question" />
+			<a data-role="button" id="submitbtn" onclick="submitq()" data-inline="true">Submit question</a>
 		</div>
+	</div>
 
-		<div id="enterliediv">
-			<h1 id="questionh">Enter your lie!</h1>
-			<div data-role="fieldcontain">
-				<input type="text" id="mylie" value="I cant think of anything.." />
-				<a data-role="button" id="liebtn" onclick="lie()" data-inline="true">Submit lie</a>
-			</div>
+	<div id="enterliediv">
+		<h1 id="questionh">Enter your lie!</h1>
+		<div data-role="fieldcontain">
+			<input type="text" id="mylie" value="I cant think of anything.." />
+			<a data-role="button" id="liebtn" onclick="lie()" data-inline="true">Submit lie</a>
 		</div>
+	</div>
 
-		<div id="selectliediv">
-			<h1 id = 'selectlieh'>Select the answer which you think is the truth!</h1>
+	<div id="selectliediv">
+		<h1 id = 'selectlieh'>Select the answer which you think is the truth!</h1>
+	</div>
+
+	<div id="viewerdiv">
+		<h1 id ='viewerdivhead'> <img src="qrcode.png" alt = "QR code"> View waiting for server..</h1>
+
+		<div id = "viewerdivbody">
+			nobody in yet
 		</div>
+	</div>
 
-		<div id="viewerdiv">
-			<h1 id ='viewerdivhead'> <img src="qrcode.png" alt = "QR code"> View waiting for server..</h1>
+	<div id="emptyfooterhidingdiv">
+		<h1>  &nbsp;</h1>
+	</div>
 
-			<div id = "viewerdivbody">
-				nobody in yet
-			</div>
+	<footer>
+	<div data-role="footer" class ="ui-footer-fixed">
+		<h4> Fakeage by PT mysterme@gmail.com <a data-role="button" id="advancestatebtn" data-icon="arrow-r" data-id="myfooter"  onclick="advancestate()" data-inline="true">Next</a> </h4>
+	</div>
+	</footer>
+	<script>init()</script>
 		</div>
-
-		<div id="emptyfooterhidingdiv">
-			<h1>  &nbsp;</h1>
-		</div>
-
-		<footer>
-		<div data-role="footer" class ="ui-footer-fixed">
-			<h4> Fakeage by PT mysterme@gmail.com <a data-role="button" id="advancestatebtn" data-icon="arrow-r" data-id="myfooter"  onclick="advancestate()" data-inline="true">Next</a> </h4>
-		</div>
-		</footer>
-		<script>init()</script>
-			</div>
-	 </body>
+</body>
 </html>
