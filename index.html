@@ -87,11 +87,8 @@ function init(){
 	ipValue = get_websocket_ip();
 	gameaddress ="http://"+ ipValue.split("/")[2].split(":")[0] +":8000";
 	console.log("Websocket IP:",ipValue);
-	showonly('logindiv');
+	showonly('#logindiv');
 	$("#loginname").val("Player" + Math.floor(Math.random()*1000+1));
-	$("#viewerdiv").hide(); //because showonly has no effect here, wtf?
-	$("#enterliediv").hide();
-	$("#selectliediv").hide();
 
 	document.getElementById('pageheader').firstElementChild.innerHTML= "Fakeage @ "+gameaddress;
 
