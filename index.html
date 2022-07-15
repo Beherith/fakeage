@@ -1,16 +1,15 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
-    <head>
-        <title>Fakeage Player</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <script src="/src/jquery-1.7.2.js"></script>
-        <script src="/src/jquery.mobile-1.1.2.js"></script>
-        <script src="/websocket_ip.js"></script>
-        <link href="/src/css/jquery.structure.css" rel="stylesheet" />
-        <link href="/src/css/jquery.theme.css" rel="stylesheet" />
+<head>
+	<title>Fakeage Player</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<link href="/src/css/jquery.mobile-1.4.5.min.css" rel="stylesheet" />
+	<script src="/websocket_ip.js"></script>
+	<script src="/src/jquery-1.11.3.min.js"></script>
+	<script src="/src/jquery.mobile-1.4.5.min.js"></script>
 <script charset="utf-8">
 //(C) Peter Sarkozy mysterme@gmail.com
-//TODO: 
+//TODO:
 //	-there is some confusion about what to display on the player side during scoring...
 //	-The headings/prompts on some views are inconsistent, and look like trash
 //	-Fix unicode support!!!! Sidestepped issue with unidecode
@@ -54,9 +53,13 @@ function latinize(nonlatin){
 		out+= latin_map[nonlatin[i]]||nonlatin[i];
 	}
 	console.log(out);
-	return out
+	return out;
 }
 
+function randomcase(text){
+	var out = text.split('').map((c) => Math.round(Math.random()) ? c.toUpperCase() : c.toLowerCase()).join('');
+	return out;
+}
 
 function create_table_from_list_of_html_codes(mylist){
 	// a general good idea is to make the table even sized.
@@ -83,16 +86,12 @@ function create_table_from_list_of_html_codes(mylist){
 	return t;
 }
 
-
 function init(){
 	ipValue = get_websocket_ip();
 	gameaddress ="http://"+ ipValue.split("/")[2].split(":")[0] +":8000";
 	console.log("Websocket IP:",ipValue);
-	showonly('logindiv');
+	showonly('#logindiv');
 	$("#loginname").val("Player" + Math.floor(Math.random()*1000+1));
-	$("#viewerdiv").hide(); //because showonly has no effect here, wtf?
-	$("#enterliediv").hide();
-	$("#selectliediv").hide();
 
 	document.getElementById('pageheader').firstElementChild.innerHTML= "Fakeage @ "+gameaddress;
 
@@ -188,15 +187,15 @@ function init(){
 			var playerswholiedthis = [];
 			var playerswhochosethis = [];
 			var playerswholikedthis = [];
-			
+
 			var pretext = jsonobj.question + "<br><br>";
-			
+
 			for (var player = 0; player<jsonobj.players.length; player ++){
 				if (jsonobj.players[player].lie == jsonobj.currentlie)    playerswholiedthis.push(jsonobj.players[player].name);
 				if (jsonobj.players[player].choice == jsonobj.currentlie) playerswhochosethis.push(jsonobj.players[player].name);
 				if (jsonobj.players[player].likes == jsonobj.currentlie)  playerswholikedthis.push(jsonobj.players[player].name);
 			}
-			
+
 			if (jsonobj.currentlie != jsonobj.answer){
 				pretext += jsonobj.currentlie + " <i> egy hazugsag! Bekuldte: </i>  " + playerswholiedthis.join(", ")+"<br> <i> Jatekosok akik elhittek: </i>  "+playerswhochosethis.join(", ");
 			}else{
@@ -204,7 +203,7 @@ function init(){
 				if (playerswhochosethis.length >0) pretext += "<i> A helyesen valaszolo jatekosok: </i>" + playerswhochosethis.join(", ");
 				else pretext += "Senki nem tudta az igazat!";
 			}
-			
+
 			if (playerswholikedthis.length > 0){
 				pretext += "<br> <i> Jatekosok akiknek tetszett a valasz: </i>"+playerswholikedthis.join(", ");
 			}
@@ -264,6 +263,7 @@ function init(){
 
 	}
 }
+
 function onError(evt){
 	$("#viewerdiv").show(); //because showonly has no effect here, wtf?
 	document.getElementById("viewerdivhead").innerHTML = 'WebSockets Error:' + evt.data + '\\n';
@@ -276,6 +276,7 @@ function onClose(evt){
 	document.getElementById("viewerdivhead").innerHTML = 'WebSockets Closed ';
 	console.log("disconnected\n");
 }
+
 function login(){
 	loginname = $("#loginname").val();
 	connection.send("loginname:"+loginname);
@@ -287,15 +288,20 @@ function login(){
 		$("#logindiv").append('<br><a data-role="button" id="forcestart" onclick="forcestart()" data-inline="true">Force start game</a><br>\n').trigger('create');
 	}
 	else{
-		$("#logindiv").append('<br><a data-role="button" id="forcestart" data-inline="true">Scream!</a><br>\n').trigger('create');
+		$("#logindiv").append('<br><a data-role="button" id="forcestart" data-inline="true" onclick="scream()">Scream!</a><br>\n').trigger('create');
 	}
-	$("#logindiv").append('<img src="qrcode.png" alt = "QR code">').trigger('create');
+	$("#logindiv").append('<img src="qrcode.png" alt = "QR code"></br>').trigger('create');
 	$("#loginbtn").hide();
 	$("#loginfieldcontain").hide();
 	$("#viewbtn").hide();
 	$("#submitdiv").hide();
 	$("#advancestatebtn").hide();
 }
+
+function scream(){
+	$("#logindiv").append("<b>"+randomcase("Scream")+"</b> ").trigger('create');
+}
+
 function view(){
 	connection.send("view:None");
 	console.log("Logged in as:" + loginname);
@@ -305,10 +311,12 @@ function view(){
 	$("#advancestatebtn").show();
 	viewer = true;
 }
+
 function forcestart(){
 	connection.send("forcestart:"+loginname);
 	console.log("Forced start:" + loginname);
 }
+
 function lie(){
 	mylie = $("#mylie").val().toUpperCase();
 	if (mylie == jsonobj.answer){
@@ -320,6 +328,7 @@ function lie(){
 		document.getElementById("questionh").innerHTML = "Hazugsag bekuldve";
 	}
 }
+
 function sortlies(){
 	var sortedlies = [jsonobj.answer];
 	for (var player = 0; player<jsonobj.players.length; player ++){
@@ -328,6 +337,7 @@ function sortlies(){
 	sortedlies.sort();
 	return sortedlies;
 }
+
 function selectlie(me){
 	if (me == mylie){ // you cant select your own lie!
 		$("#selectliediv").append('<h1>Nem valaszthatod a sajat hazugsagodat, valassz mast!</h1>\n').trigger('create');
@@ -344,6 +354,7 @@ function selectlie(me){
 	}
 	$("#selectliediv").append('<h1>  &nbsp;</h1>');
 }
+
 function like(me){
 	if (me == mylie){ // you cant select your own lie!
 		$("#selectliediv").append('<h1>A sajat hazugsagodat nem valaszthatod!</h1>\n').trigger('create');
@@ -359,13 +370,16 @@ function submitq(){
 	connection.send('submitq:'+$("#submitquestion").val()+":"+$("#submitanswer").val());
 	$("#submitdiv").hide();
 }
+
 function showonly(divtoshow){
 	var divs = ['#enterliediv','#selectliediv','#logindiv','#viewerdiv'];
 	for (var d =0; d < divs.length; d++){
 		if (divtoshow == divs[d]){
 			$(divs[d]).slideDown("slow");
 		}
-		else $(divs[d]).slideUp("slow");
+		else{
+			$(divs[d]).slideUp("slow");
+		}
 	}
 }
 function showquestion(q){
@@ -378,72 +392,72 @@ function showquestion(q){
 }
 
 function advancestate(){
-    if (viewer) {
-        connection.send('advancestate:0');
-        console.log("Forcing state advance");
-    }
+	if (viewer) {
+		connection.send('advancestate:0');
+		console.log("Forcing state advance");
+	}
 }
 
 </script>
-</head>  
-	<body>
-		<div data-role="page" id="page1">
-		<div id="pageheader" data-role="header">
-			<h1>Fakeage</h1>
+</head>
+<body>
+	<div data-role="page" id="page1">
+	<div id="pageheader" data-role="header">
+		<h1>Fakeage</h1>
+	</div>
+	<div id="logindiv">
+		<h1>Enter your name if you wish to play!</h1>
+		<div data-role="fieldcontain" id ="loginfieldcontain">
+			<label for="loginname">My name is</label>
+			<input type="text" id="loginname" value="Dumbfuck" />
+			<a data-role="button" id="loginbtn" onclick="login()" data-inline="true">Play!</a>
 		</div>
-		<div id="logindiv">
-			<h1>Enter your name if you wish to play!</h1>
-			<div data-role="fieldcontain" id ="loginfieldcontain">
-				<label for="loginname">My name is</label>
-				<input type="text" id="loginname" value="Dumbfuck" />
-				<a data-role="button" id="loginbtn" onclick="login()" data-inline="true">Play!</a>	
-			</div>
-			<div data-role="fieldcontain">
-				<a data-role="button" id="viewbtn" onclick="view()" data-inline="true">View only</a>
-			</div>
+		<div data-role="fieldcontain">
+			<a data-role="button" id="viewbtn" onclick="view()" data-inline="true">View only</a>
 		</div>
-		
-		<div id="submitdiv">
-			<h1>Submit a question:</h1>
-			<div data-role="fieldcontain">
-				<label for="submitquestion">Question</label>
-				<input type="text" id="submitquestion" value="Enter the ___ you would like to submit." />
-				<label for="submitanswer">Answer</label>
-				<input type="text" id="submitanswer" value="question" />
-				<a data-role="button" id="submitbtn" onclick="submitq()" data-inline="true">Submit question</a>	
-			</div>
-		</div>
-		
-		<div id="enterliediv">
-			<h1 id="questionh">Enter your lie!</h1>
-			<div data-role="fieldcontain">
-				<input type="text" id="mylie" value="I cant think of anything.." />
-				<a data-role="button" id="liebtn" onclick="lie()" data-inline="true">Submit lie</a>	
-			</div>
-		</div>
-		
-		<div id="selectliediv">	
-			<h1 id = 'selectlieh'>Select the answer which you think is the truth!</h1>
-		</div>
-		
-		<div id="viewerdiv">	
-			<h1 id ='viewerdivhead'> <img src="qrcode.png" alt = "QR code"> View waiting for server..</h1>
+	</div>
 
-			<div id = "viewerdivbody">
-				nobody in yet
-			</div>
+	<div id="submitdiv">
+		<h1>Submit a question:</h1>
+		<div data-role="fieldcontain">
+			<label for="submitquestion">Question</label>
+			<input type="text" id="submitquestion" value="Enter the ___ you would like to submit." />
+			<label for="submitanswer">Answer</label>
+			<input type="text" id="submitanswer" value="question" />
+			<a data-role="button" id="submitbtn" onclick="submitq()" data-inline="true">Submit question</a>
 		</div>
+	</div>
 
-		<div id="emptyfooterhidingdiv">
-			<h1>  &nbsp;</h1>
+	<div id="enterliediv">
+		<h1 id="questionh">Enter your lie!</h1>
+		<div data-role="fieldcontain">
+			<input type="text" id="mylie" value="I cant think of anything.." />
+			<a data-role="button" id="liebtn" onclick="lie()" data-inline="true">Submit lie</a>
 		</div>
+	</div>
 
-		<footer>
-		<div data-role="footer" class ="ui-footer-fixed">
-			<h4> Fakeage by PT mysterme@gmail.com <a data-role="button" id="advancestatebtn" data-icon="arrow-r" data-id="myfooter"  onclick="advancestate()" data-inline="true">Next</a> </h4>
+	<div id="selectliediv">
+		<h1 id = 'selectlieh'>Select the answer which you think is the truth!</h1>
+	</div>
+
+	<div id="viewerdiv">
+		<h1 id ='viewerdivhead'> <img src="qrcode.png" alt = "QR code"> View waiting for server..</h1>
+
+		<div id = "viewerdivbody">
+			nobody in yet
 		</div>
-		</footer>
-		<script>init()</script>
-			</div>
-	 </body>
+	</div>
+
+	<div id="emptyfooterhidingdiv">
+		<h1>  &nbsp;</h1>
+	</div>
+
+	<footer>
+	<div data-role="footer" class ="ui-footer-fixed">
+		<h4> Fakeage by PT mysterme@gmail.com <a data-role="button" id="advancestatebtn" data-icon="arrow-r" data-id="myfooter"  onclick="advancestate()" data-inline="true">Next</a> </h4>
+	</div>
+	</footer>
+	<script>init()</script>
+		</div>
+</body>
 </html>
