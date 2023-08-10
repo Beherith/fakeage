@@ -602,7 +602,7 @@ class SimpleWebSocketServer(object):
       self.serversocket = socket.socket(hostInfo[0][0], hostInfo[0][1], hostInfo[0][2])
       self.serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
       self.serversocket.bind(hostInfo[0][4])
-      self.serversocket.listen(5)
+      self.serversocket.listen(20)
       self.selectInterval = selectInterval
       self.connections = {}
       self.listeners = [self.serversocket]
@@ -671,7 +671,7 @@ class SimpleWebSocketServer(object):
             try:
                sock, address = self.serversocket.accept()
                newsock = self._decorateSocket(sock)
-               newsock.setblocking(0)
+               newsock.setblocking(False)
                fileno = newsock.fileno()
                self.connections[fileno] = self._constructWebSocket(newsock, address)
                self.listeners.append(fileno)

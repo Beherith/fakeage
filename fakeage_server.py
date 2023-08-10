@@ -571,7 +571,7 @@ if __name__ == "__main__":
 
     # start servers:
     wsserver = SimpleWebSocketServer(my_ip, args.wsport,
-                                     WSFakeageServer, selectInterval=0.1)
+                                     WSFakeageServer, selectInterval=0.05)
     wsserver.handleTick = handleTick
 
     httpserver = http.server.HTTPServer((my_ip, args.httpport),
