@@ -279,6 +279,7 @@ function onClose(evt){
 
 function login(){
 	loginname = $("#loginname").val();
+	loginname = loginname.trim();
 	connection.send("loginname:"+loginname);
 	console.log("Logged in as:" + loginname);
 	document.getElementById('pageheader').firstElementChild.innerHTML= loginname +" @ "+gameaddress;
@@ -318,7 +319,7 @@ function forcestart(){
 }
 
 function lie(){
-	mylie = $("#mylie").val().toUpperCase();
+	mylie = $("#mylie").val().toUpperCase().trim();
 	if (mylie == jsonobj.answer){
 		$("#mylie").val("Ez az igazsag, hazudj valamit inkabb!");
 	}else{
