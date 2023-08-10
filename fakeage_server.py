@@ -303,7 +303,7 @@ class Game(metaclass=Singleton):
         with open(self.questionsfilename, 'r', encoding='utf-8') as questionsfile:
             for line in questionsfile.readlines():
                 line = line.strip().split('\t')
-                if len(line) == 2:
+                if len(line) >= 2:
                     question = Question(line[0], unidecode_allcaps_shorten32(line[1]))
                     self.questions.append(question)
         num_questions = len(self.questions)
