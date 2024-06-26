@@ -46,13 +46,15 @@ class Singleton(type):
 
 
 class Question:
-    def __init__(self, question, answer, likes=None, lies=None, choices=None):
+    def __init__(self, question, answer, likes=None, lies=None, choices=None, author = None, flavor = None):
         self.question = question
         self.answer = answer
         # likes,lies and choices dicts use player.name as key
         self.likes = likes or {}
         self.lies = lies or {}
         self.choices = choices or {}
+        self.author = author
+        self.flavor = flavor
 
     def as_dict(self):
         return {'question': self.question, 'answer': self.answer}
@@ -214,6 +216,9 @@ class Game(metaclass=Singleton):
         print(f'{len(self.viewers)} viewers, '
               f'{len(self.players)} players, '
               f'viewinfo: {gamestatedict}')
+        for i, player in enumerate(gamestatedict['players']):
+            print(f'{i}: {player}')
+        
         return gamestatedict
 
     def get_player_by_name(self, name):
@@ -303,8 +308,13 @@ class Game(metaclass=Singleton):
         with open(self.questionsfilename, 'r', encoding='utf-8') as questionsfile:
             for line in questionsfile.readlines():
                 line = line.strip().split('\t')
+                print(line)
                 if len(line) >= 2:
                     question = Question(line[0], unidecode_allcaps_shorten32(line[1]))
+                    if len(line) >=3:
+                        question.author = line[2]
+                    if len(line) >=4:
+                        question.flavor = line[3]
                     self.questions.append(question)
         num_questions = len(self.questions)
         self.questionsperround = min(self.questionsperround, num_questions)
@@ -439,7 +449,11 @@ class WSFakeageServer(WebSocket):
                 print(f'{game.players[self]} tried to lie multiple times!')
             else:
                 # register lie
-                game.cur_question.lies[player.name] = unidecode_allcaps_shorten32(parameter)
+                latinized = unidecode_allcaps_shorten32(parameter)
+                if game.cur_question.answer == latinized:
+                    print(f'ERROR: {game.players[self]} tried to submit the answer({game.cur_question.answer}) as a lie:({latinized})')
+                else:
+                    game.cur_question.lies[player.name] = latinized
                 game.update_view('viewers')
 
     def _handle_cmd_choice(self, parameter):
@@ -508,7 +522,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--host",
         type=str,
-        default='',
+        default='152.66.253.59',
         help="hostname (localhost)",
     )
     parser.add_argument(

@@ -7,6 +7,7 @@
 	<script src="/websocket_ip.js"></script>
 	<script src="/src/jquery-1.11.3.min.js"></script>
 	<script src="/src/jquery.mobile-1.4.5.min.js"></script>
+	<meta charset="utf-8">
 <script charset="utf-8">
 //(C) Peter Sarkozy mysterme@gmail.com
 //TODO:
@@ -42,19 +43,59 @@ var checkpng = "<img alt=\"OK\" src=\"/src/check.png\">";
 var eckspng = "<img alt =\"X\" src=\"/src/ecks.png\">";
 var likepng = "<img alt = \"likes\" src=\"/src/like.png\">";
 var cuppng = "<img alt = \"pts\" src=\"/src/cup.png\">";
+var mylanguage = "EN";
+
+var transjson = `
+	{
+		"EN" : {
+			
+		},
+		"HU" : {
+
+		}
+	}
+`;
+
+var translations = JSON.parse(transjson);
+
+function TRANS(str){
+	if (translations.get(mylanguage)) {
+		var lang = translations.get(mylanguage);
+		if (lang.get(str)){
+			return lang.get(str);
+		}else{
+			return str;
+		}
+	}else{
+		return str;
+	}
+}
 
 function latinize(nonlatin){
 	//This function is broken, does different shit on all browsers! FUCK THIS HORRIBLE MESS! I HATE FUCKING NON-ASCII CHARACTERS!
 	var latin_map = {'É':'E','Á':'A','Ű':'U','Ü':'U','Ö':'O','Ő':'O','Ú':'U','Í':'I','Ó':'O','é':'e','á':'a','ű':'u','ü':'u','ö':'o','ő':'o','ú':'u','í':'i','ó':'o'};
-	console.log(nonlatin);
+
+	//console.log('é'.normalize("NFD"),latin_map);
+	//console.log(nonlatin);
+	//console.log("normalized", nonlatin.normalize("NFC"));
 	var out = '';
-	for (var i =0;i<nonlatin.length;i++){
+	/*for (var i =0;i<nonlatin.length;i++){
 		console.log(nonlatin[i],latin_map[nonlatin[i]]);
-		out+= latin_map[nonlatin[i]]||nonlatin[i];
+		if (latin_map[nonlatin[i]]){
+			out += latin_map[nonlatin[i]];
+		}else{
+			out += nonlatin[i];
+		}
+	}*/
+	for (let char of nonlatin){
+		out = out + ( latin_map[char] || char);
+		//console.log("latinize:", latin_map[char], char);
 	}
-	console.log(out);
+	console.log("latinized", nonlatin, out);
 	return out;
 }
+
+latinize("aáAÁeéeÉiíiÍ")
 
 function randomcase(text){
 	var out = text.split('').map((c) => Math.round(Math.random()) ? c.toUpperCase() : c.toLowerCase()).join('');
@@ -95,7 +136,7 @@ function init(){
 
 	document.getElementById('pageheader').firstElementChild.innerHTML= "Fakeage @ "+gameaddress;
 
-	//console.log("Latize test:",latinize("Búzafűlé	\tcsicskalangos CleanUpString tesztelÉs"));
+	console.log("Latize test:",latinize("Búzafűlé	ÜÖŰPÁÉÉÍÍÚÚŐŐ\tcsicskalangos CleanUp-String_tesztelÉs"));
 	connection = new WebSocket(ipValue); //handle failure
 	connection.onclose = function(evt) { onClose(evt) };
 	connection.onerror = function(evt) { onError(evt) };
@@ -320,6 +361,9 @@ function forcestart(){
 
 function lie(){
 	mylie = $("#mylie").val().toUpperCase().trim();
+	// convert it to latinize
+	mylie = latinize(mylie)
+	console.log("latinized?", mylie, jsonobj.answer)
 	if (mylie == jsonobj.answer){
 		$("#mylie").val("Ez az igazsag, hazudj valamit inkabb!");
 	}else{
