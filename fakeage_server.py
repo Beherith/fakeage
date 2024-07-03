@@ -196,14 +196,22 @@ class Game(metaclass=Singleton):
         """ Export current game state in single dictionary """
         question = ''
         answer = ''
+        author = ''
+        flavor = ''
         if self.cur_question:
             question = self.cur_question.question
             answer = self.cur_question.answer
+            if self.cur_question.author:
+                author = self.cur_question.author
+            if self.cur_question.flavor:
+                flavor = self.cur_question.flavor
         gamestatedict = {
             "state": self.state,
             "players": [],
             "question": question,
             "answer": answer,
+            "author": author,
+            "flavor": flavor,
             "currentlie": self.currentlie,
         }
         score_sorted_player_list = sorted(self.players.values(),

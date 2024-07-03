@@ -243,6 +243,9 @@ function init(){
 				pretext += jsonobj.currentlie + " <i> az igazsag! </i> <br>"
 				if (playerswhochosethis.length >0) pretext += "<i> A helyesen valaszolo jatekosok: </i>" + playerswhochosethis.join(", ");
 				else pretext += "Senki nem tudta az igazat!";
+
+				if (jsonobj.author.length > 0) pretext += "<br> <i> Bekuldo: </i>" + jsonobj.author+ " ";
+				if (jsonobj.flavor.length > 0) pretext += "<br> <i>" + jsonobj.flavor+ " </i>";
 			}
 
 			if (playerswholikedthis.length > 0){
