@@ -32,6 +32,9 @@ from unidecode import unidecode  #thank me later: https://pypi.org/project/Unide
 
 from SimpleWebSocketServer import WebSocket, SimpleWebSocketServer
 
+import asyncio
+from websockets.server import serve
+
 
 class Singleton(type):
     """ Utility function to implement singleton classes """
@@ -504,7 +507,112 @@ class WSFakeageServer(WebSocket):
         """ Handle a ws connection close """
         game.remove_player(self)
         print(f'{self.address} disconnected, removed')
+globalgame = []
 
+async def update_view(recipients='all'):
+    viewinfo = game.get_gamestate()
+    json
+
+
+async def handleClient(websocket):
+    """ Handle new client """
+    game.clients.append(websocket)
+    print(f'{websocket.remote_address} connected')
+    try:
+        async for message in websocket:
+            
+            print(f'Websocket got message {message}, returning it')
+            globalgame.append(message)
+            update = False
+            if ':' in message:
+                command, _, parameter = message.partition(':')
+                # call specific handler function
+                if command == 'loginname':
+                    game.add_player(websocket, parameter)
+                    update = 'viewers'
+
+                elif command == 'forcestart':
+                    if game.state == 'pregame':
+                        game.forcestart = True
+                    else:
+                        print("Cant force start game in progress!")
+                
+                elif command == 'view':
+                    if websocket not in game.viewers:
+                        game.viewers.append(websocket)
+                        update = 'viewers'
+                    else:
+                        print(f'Client {websocket.remote_address} already a viewer')       
+         
+                elif command == 'lie':
+                    if game.state != 'lietome':
+                        print(f'{game.players[websocket]} tried to submit lie {parameter} out of time')
+                    else:
+                        player = game.players[websocket]
+                        if player in game.cur_question.lies:
+                            print(f'{game.players[websocket]} tried to lie multiple times!')
+                        else:
+                            # register lie
+                            latinized = unidecode_allcaps_shorten32(parameter)
+                            if game.cur_question.answer == latinized:
+                                print(f'ERROR: {game.players[websocket]} tried to submit the answer({game.cur_question.answer}) as a lie:({latinized})')
+                            else:
+                                game.cur_question.lies[player.name] = latinized
+                            update = 'viewers'
+                    
+                elif command == 'choice':
+                    if game.lie_selection_received(websocket, unidecode_allcaps_shorten32(parameter)):
+                        update = 'viewers'
+                    
+                elif command == 'like':
+                    if game.like_recieved(websocket, unidecode_allcaps_shorten32(parameter)):
+                        update = 'viewers'
+                    
+                elif command == 'submitq':
+                    game.submit_question(parameter)
+                    
+                elif command == 'advancestate':
+                    game.submit_question(parameter)
+                    if game.state == 'pregame':
+                        print('Force starting through viewer from', game.state)
+                        game.time()
+                        game.forcestart = True
+                    elif game.state == "lieselection":
+                        game.state = 'scoring'
+                        game.do_scoring()
+                    elif game.state == 'scoring':
+                        game.do_scoring()
+                    else:
+                        idx = (game.states.index(game.state) + 1) % len(game.states)
+                        newstate = game.states[max(0, idx)]
+                        print(f'Advancing state through viewer: from {game.state} to {newstate}')
+                        if newstate == 'pregame':
+                            game.forcestart = True
+                        game.time()
+                        game.state = newstate
+                        update = 'all'
+        
+                else:
+                    print(f'Command {command} from{websocket.remote_address} has no handler')
+
+            if update != False:
+                game.update_view(update)
+    finally:
+        print(f'Client disconnected {websocket.remote_address}')
+        game.remove_player(websocket)
+
+
+async def wsmessagehandler(websocket):
+    """
+    Handle an incoming connection
+    """
+    await handleClient(websocket)
+
+
+
+async def websocketsmain(wsip = 'localhost', wsport= 8001):
+        async with serve(wsmessagehandler, wsip, wsport):
+            await asyncio.Future() # run forever
 
 def write_websocket_ip_to_file(websocket_ip_fn="websocket_ip.js",wshostname = ''):
     """ Write websocket URL to a file """
@@ -592,16 +700,20 @@ if __name__ == "__main__":
     game.autoadvance = args.autoadvance
 
     # start servers:
-    wsserver = SimpleWebSocketServer(my_ip, args.wsport,
-                                     WSFakeageServer, selectInterval=0.05)
-    wsserver.handleTick = handleTick
+    #wsserver = SimpleWebSocketServer(my_ip, args.wsport,
+    #                                 WSFakeageServer, selectInterval=0.05)
+    
+    #wsserver.handleTick = handleTick
 
     httpserver = http.server.HTTPServer((my_ip, args.httpport),
                                         http.server.SimpleHTTPRequestHandler)
 
     signal.signal(signal.SIGINT, close_sig_handler)
     threading.Thread(target=httpserver.serve_forever).start()
-    threading.Thread(target=wsserver.serveforever).start()
+
+    #threading.Thread(target=wsserver.serveforever).start()
+
+    asyncio.run(websocketsmain(my_ip, args.wsport))
 
     print("Servers started.")
     while True:

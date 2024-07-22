@@ -151,6 +151,7 @@ function init(){
 		catch(e){
 			console.log('Failed to parse json object or other error'+e);
 			console.log(received_msg);
+			return ;
 		}
 		var output = document.getElementById("viewerdivbody");
 		output.innerHTML = ''; //clear body
@@ -345,6 +346,7 @@ function login(){
 
 function scream(){
 	$("#logindiv").append("<b>"+randomcase("Scream")+"</b> ").trigger('create');
+	connection.send("scream:" + randomcase("scream"));
 }
 
 function view(){
