@@ -17,6 +17,9 @@ Devnotes:
 	- [x]score is also fooked
 	- [x] Handle reconnection over the course of a game?
 	- [bug] viewer waiting for server not showing joined players.
+    - [ ] Fix httpd server doing useless fqdn lookups
+    - [ ] Fix midgame joins
+    - [ ] Display Timer of 1 min for enterlie, and 30 sec for selectlie
 '''
 import argparse
 import http.server
@@ -26,6 +29,7 @@ import socket
 import sys
 import threading
 import time
+import os
 
 import pyqrcode
 from unidecode import unidecode  #thank me later: https://pypi.org/project/Unidecode/#description
@@ -33,8 +37,10 @@ from unidecode import unidecode  #thank me later: https://pypi.org/project/Unide
 from SimpleWebSocketServer import WebSocket, SimpleWebSocketServer
 
 import asyncio
+import websockets 
 from websockets.server import serve
 
+debug = True
 
 class Singleton(type):
     """ Utility function to implement singleton classes """
@@ -120,6 +126,12 @@ class Player:
             }
 
 
+async def update_view(recipients='all'):
+    viewinfo = json.dumps(game.get_gamestate())
+    if recipients in ['all', 'players']:
+        websockets.broadcast(game.players,viewinfo)
+    if recipients in ['all', 'viewers']:
+        websockets.broadcast(game.viewers,viewinfo)
 class Game(metaclass=Singleton):
     def __init__(self):
         # state management
@@ -255,8 +267,9 @@ class Game(metaclass=Singleton):
             self.state = 'finalscoring'
         else:
             self.currentlie = self.scoreorder.pop(0)[0]
-        self.update_view()
+        #asyncio.run(update_view())
         self.time()
+        return "all"
 
     def lie_selection_received(self, client, selectedlie):
         if self.state != 'lieselection':
@@ -359,14 +372,15 @@ class Game(metaclass=Singleton):
         if state in self.states:
             # call specific handler function
             state_handler_func = getattr(self, f'_handle_{state}')
-            state_handler_func()
+            return state_handler_func()
 
     def _handle_pregame(self):
         if self.forcestart:
             self.forcestart = False
             self.load_next_question()
             self.state = 'lietome'
-            self.update_view()
+            #asyncio.run(update_view())
+            return "all"
 
     def _handle_lietome(self):
         # total of game.lietime seconds to submit a lie
@@ -377,7 +391,8 @@ class Game(metaclass=Singleton):
             print('Everyone has submitted their lie, advancing to lie selection')
             self.time()
             self.state = 'lieselection'
-            self.update_view()
+            #asyncio.run(update_view())
+            return "all"
 
     def _handle_lieselection(self):
         # numlies*5 + 10 seconds to choose lies and like stuff
@@ -390,12 +405,13 @@ class Game(metaclass=Singleton):
             self.do_scoring()
             self.state = 'scoring'
             self.t -= self.scoretime  # rewind time to get instant scoring round
-            self.update_view()
+            #asyncio.run(update_view())
+            return "all"
 
     def _handle_scoring(self):
         times_up = (time.time() - self.t) > self.scoretime
         if self.autoadvance and times_up:
-            self.do_scoring()
+            return self.do_scoring()
 
     def _handle_finalscoring(self):
         times_up = (time.time() - self.t) > (2 * self.scoretime)
@@ -421,6 +437,12 @@ def handleTick():
     """
     game.handle_state(game.state)
 
+async def asyncTick():
+    while True:
+        update = game.handle_state(game.state)
+        if update is not None:
+            await update_view(update)
+        await asyncio.sleep (0.05)
 
 class WSFakeageServer(WebSocket):
     def handleMessage(self):
@@ -439,7 +461,7 @@ class WSFakeageServer(WebSocket):
 
     def _handle_cmd_loginname(self, parameter):
         game.add_player(self, parameter)
-        game.update_view('viewers')
+        asyncio.run(update_view('viewers'))
 
     def _handle_cmd_forcestart(self, parameter):
         if game.state == 'pregame':
@@ -449,7 +471,7 @@ class WSFakeageServer(WebSocket):
 
     def _handle_cmd_view(self, parameter):
         game.viewers.append(self)
-        game.update_view('viewers')
+        asyncio.run(update_view('viewers'))
 
     def _handle_cmd_lie(self, parameter):
         if game.state != 'lietome':
@@ -465,15 +487,15 @@ class WSFakeageServer(WebSocket):
                     print(f'ERROR: {game.players[self]} tried to submit the answer({game.cur_question.answer}) as a lie:({latinized})')
                 else:
                     game.cur_question.lies[player.name] = latinized
-                game.update_view('viewers')
+                asyncio.run(update_view('viewers'))
 
     def _handle_cmd_choice(self, parameter):
         if game.lie_selection_received(self, unidecode_allcaps_shorten32(parameter)):
-            game.update_view('viewers')
+            asyncio.run(update_view('viewers'))
 
     def _handle_cmd_like(self, parameter):
         if game.like_recieved(self, unidecode_allcaps_shorten32(parameter)):
-            game.update_view('viewers')
+            asyncio.run(update_view('viewers'))
 
     def _handle_cmd_submitq(self, parameter):
         game.submit_question(parameter)
@@ -496,7 +518,8 @@ class WSFakeageServer(WebSocket):
                 game.forcestart = True
             game.time()
             game.state = newstate
-            game.update_view()
+
+        asyncio.run(update_view())
 
     def handleConnected(self):
         """ Handle new ws connection """
@@ -509,10 +532,6 @@ class WSFakeageServer(WebSocket):
         print(f'{self.address} disconnected, removed')
 globalgame = []
 
-async def update_view(recipients='all'):
-    viewinfo = game.get_gamestate()
-    json
-
 
 async def handleClient(websocket):
     """ Handle new client """
@@ -521,7 +540,7 @@ async def handleClient(websocket):
     try:
         async for message in websocket:
             
-            print(f'Websocket got message {message}, returning it')
+            print(f'Websocket got message {message}')
             globalgame.append(message)
             update = False
             if ':' in message:
@@ -572,7 +591,6 @@ async def handleClient(websocket):
                     game.submit_question(parameter)
                     
                 elif command == 'advancestate':
-                    game.submit_question(parameter)
                     if game.state == 'pregame':
                         print('Force starting through viewer from', game.state)
                         game.time()
@@ -592,11 +610,14 @@ async def handleClient(websocket):
                         game.state = newstate
                         update = 'all'
         
+                elif command == 'scream':
+                    print(f'Scream sent by {websocket.remote_address}: {parameter}')
+
                 else:
                     print(f'Command {command} from{websocket.remote_address} has no handler')
 
             if update != False:
-                game.update_view(update)
+                await update_view(update)
     finally:
         print(f'Client disconnected {websocket.remote_address}')
         game.remove_player(websocket)
@@ -628,10 +649,25 @@ def write_websocket_ip_to_file(websocket_ip_fn="websocket_ip.js",wshostname = ''
 
 def close_sig_handler(signum, frame):
     """ Handle close signal (Ctrl+C) """
-    wsserver.close()
     httpserver.shutdown()
     sys.exit()
 
+
+class MyHTTPRequestHandler (http.server.SimpleHTTPRequestHandler):
+    server_version = "FakeageSimpleHTTPRequestHandler"
+    directory = os.getcwd()
+    #extensions_map = {
+    #    '.gz': 'application/gzip',
+    #    '.Z': 'application/octet-stream',
+    #    '.bz2': 'application/x-bzip2',
+    #    '.xz': 'application/x-xz',
+    #    '.js': 'text/javascript',
+    #    '': 'application/octet-stream'
+    #}
+    def address_string(self):
+        print(f'MyHTTPRequestHandler:address_string')
+        host, port = self.client_address[:2]
+        return host
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -687,34 +723,34 @@ if __name__ == "__main__":
 
     # Set the IP in the js file on each launch of the server.  This
     # seems pretty hacky, but i couldnt think of anything better
-	
-	
-	
     write_websocket_ip_to_file("websocket_ip.js",args.wshostname)
 
+    # Init game and questions
     game = Game()
-
-    # load questions:
     game.load_questions(args.questions)
-
     game.autoadvance = args.autoadvance
 
-    # start servers:
-    #wsserver = SimpleWebSocketServer(my_ip, args.wsport,
-    #                                 WSFakeageServer, selectInterval=0.05)
-    
-    #wsserver.handleTick = handleTick
-
     httpserver = http.server.HTTPServer((my_ip, args.httpport),
-                                        http.server.SimpleHTTPRequestHandler)
-
+                                        MyHTTPRequestHandler)
+    # This is slow because the HTTP server insists on doing a fully-qualified domain name check that takes 5 secs when handling '/'
+    #httpserver.request_queue_size = 20
+    #httpserver.directory = os.getcwd()
     signal.signal(signal.SIGINT, close_sig_handler)
-    threading.Thread(target=httpserver.serve_forever).start()
+    threading.Thread(target=httpserver.serve_forever, kwargs = {'poll_interval':0.05}, name = "HTTPServerThread").start()
 
     #threading.Thread(target=wsserver.serveforever).start()
+    
+    #asyncio.run(websocketsmain(my_ip, args.wsport), debug = debug)
 
-    asyncio.run(websocketsmain(my_ip, args.wsport))
+    #wstask = asyncio.create_task(websocketsmain(my_ip, args.wsport), debug = debug)
+
+    #ticktask = asyncio.create_task(asyncTick(), debug = debug)
+
+    async def asyncmain():
+        await asyncio.gather(websocketsmain(my_ip, args.wsport), asyncTick())
 
     print("Servers started.")
-    while True:
-        time.sleep(2)
+    asyncio.run(asyncmain())
+    while 1:
+        handleTick()
+        time.sleep(0.05)

@@ -74,22 +74,10 @@ function TRANS(str){
 function latinize(nonlatin){
 	//This function is broken, does different shit on all browsers! FUCK THIS HORRIBLE MESS! I HATE FUCKING NON-ASCII CHARACTERS!
 	var latin_map = {'É':'E','Á':'A','Ű':'U','Ü':'U','Ö':'O','Ő':'O','Ú':'U','Í':'I','Ó':'O','é':'e','á':'a','ű':'u','ü':'u','ö':'o','ő':'o','ú':'u','í':'i','ó':'o'};
-
-	//console.log('é'.normalize("NFD"),latin_map);
-	//console.log(nonlatin);
-	//console.log("normalized", nonlatin.normalize("NFC"));
+	
 	var out = '';
-	/*for (var i =0;i<nonlatin.length;i++){
-		console.log(nonlatin[i],latin_map[nonlatin[i]]);
-		if (latin_map[nonlatin[i]]){
-			out += latin_map[nonlatin[i]];
-		}else{
-			out += nonlatin[i];
-		}
-	}*/
 	for (let char of nonlatin){
 		out = out + ( latin_map[char] || char);
-		//console.log("latinize:", latin_map[char], char);
 	}
 	console.log("latinized", nonlatin, out);
 	return out;
@@ -239,7 +227,7 @@ function init(){
 			}
 
 			if (jsonobj.currentlie != jsonobj.answer){
-				pretext += jsonobj.currentlie + " <i> egy hazugsag! Bekuldte: </i>  " + playerswholiedthis.join(", ")+"<br> <i> Jatekosok akik elhittek: </i>  "+playerswhochosethis.join(", ");
+				pretext += jsonobj.currentlie + " <i> egy hazugsag! Bekuldte: </i>  " + playerswholiedthis.join(", ")+"<br> <i> Játékosok akik elhittek: </i>  "+playerswhochosethis.join(", ");
 			}else{
 				pretext += jsonobj.currentlie + " <i> az igazsag! </i> <br>"
 				if (playerswhochosethis.length >0) pretext += "<i> A helyesen valaszolo jatekosok: </i>" + playerswhochosethis.join(", ");
@@ -258,7 +246,7 @@ function init(){
 		};
 		if (jsonobj.state == "finalscoring") {//scoring is identical in viewer and player
 			//var pre = document.createElement("h1");
-			document.getElementById("viewerdivhead").innerHTML = jsonobj.question + ' (' + jsonobj.answer + ')' + ' <br> Pontok osszesitese:';
+			document.getElementById("viewerdivhead").innerHTML = jsonobj.question + ' (' + jsonobj.answer + ')' + ' <br> Pontok összesítese:';
 			//console.log(pre.innerHTML);
 			//output.appendChild(pre);
 
@@ -311,15 +299,19 @@ function init(){
 
 function onError(evt){
 	$("#viewerdiv").show(); //because showonly has no effect here, wtf?
-	document.getElementById("viewerdivhead").innerHTML = 'WebSockets Error:' + evt.data + '\\n';
-	console.log('error: ' + evt.data + '\n');
+	const evtString = `Code: ${evt.code}, Reason: ${evt.reason}, WasClean: ${evt.wasClean}`;
+	document.getElementById("viewerdivhead").innerHTML = 'WebSockets Error:' + evt.data + '\\n' + evtString + '\\n';
+	console.log('error: ' + evt.data + '\n' + evtString);
 	websocket.close();
 }
 
 function onClose(evt){
 	$("#viewerdiv").show(); //because showonly has no effect here, wtf?
-	document.getElementById("viewerdivhead").innerHTML = 'WebSockets Closed ';
-	console.log("disconnected\n");
+	const evtString = `Code: ${evt.code}, Reason: ${evt.reason}, WasClean: ${evt.wasClean}`;
+    
+
+	document.getElementById("viewerdivhead").innerHTML = 'WebSockets Closed ' + evtString;
+	console.log("disconnected: " + evtString);
 }
 
 function login(){
@@ -503,8 +495,8 @@ function advancestate(){
 	</div>
 
 	<footer>
-	<div data-role="footer" class ="ui-footer-fixed">
-		<h4> Fakeage by PT mysterme@gmail.com <a data-role="button" id="advancestatebtn" data-icon="arrow-r" data-id="myfooter"  onclick="advancestate()" data-inline="true">Next</a> </h4>
+	<div id="footer" data-role="footer" class ="ui-footer-fixed">
+		<h4> Fakeage by PT mysterme@gmail.com <a data-role="button" id="advancestatebtn" data-icon="arrow-r" data-id="myfooter"  onclick="advancestate()" data-inline="true">Next</a> <b id="timer">60s</b></h4>
 	</div>
 	</footer>
 	<script>init()</script>
