@@ -687,7 +687,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--host",
         type=str,
-        default='127.0.0.1',
+        default='',
         help="hostname (localhost)",
     )
     parser.add_argument(
