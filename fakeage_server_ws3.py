@@ -128,10 +128,22 @@ class Player:
 
 async def update_view(recipients='all'):
     viewinfo = json.dumps(game.get_gamestate())
-    if recipients in ['all', 'players']:
-        websockets.broadcast(game.players,viewinfo)
-    if recipients in ['all', 'viewers']:
-        websockets.broadcast(game.viewers,viewinfo)
+    if recipients == 'viewers':
+        websockets_set = [viewer for viewer in game.viewers]
+    else:
+        websockets_set = [viewer for viewer in game.viewers]
+        websockets_set += [client for client in game.players.keys()]
+        
+    # websockets.broadcast(websockets_set,viewinfo)
+    for ws in websockets_set:
+        try:
+            await ws.send(viewinfo)
+        except Exception:
+            # Optionally handle disconnected clients here
+            # Print detailed exception herE:
+            print(f'Error sending message to {ws}: {sys.exc_info()[0]}')
+            
+            pass
 class Game(metaclass=Singleton):
     def __init__(self):
         # state management
@@ -267,7 +279,8 @@ class Game(metaclass=Singleton):
             self.state = 'finalscoring'
         else:
             self.currentlie = self.scoreorder.pop(0)[0]
-        #asyncio.run(update_view())
+        asyncio.create_task(update_view())
+        time.sleep(0.1)
         self.time()
         return "all"
 
@@ -719,7 +732,8 @@ if __name__ == "__main__":
 
     # generate qr code
     myqrcode = pyqrcode.create(myurl)
-    myqrcode.png('qrcode.png', scale=6)
+    
+    myqrcode.png("qrcode.png", scale=6)
 
     # Set the IP in the js file on each launch of the server.  This
     # seems pretty hacky, but i couldnt think of anything better
@@ -750,6 +764,8 @@ if __name__ == "__main__":
         await asyncio.gather(websocketsmain(my_ip, args.wsport), asyncTick())
 
     print("Servers started.")
+    
+    print(f'Server running at: {myurl}')
     asyncio.run(asyncmain())
     while 1:
         handleTick()
