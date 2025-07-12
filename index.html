@@ -156,7 +156,9 @@ function init(){
 			console.log(pre.innerHTML);
 		}
 		if (jsonobj.state == 'lietome'){
+			startTimer(60);
 			if (viewer){
+				
 				document.getElementById("viewerdivhead").innerHTML = jsonobj.question+'<br>Add meg a hazugsagod:<br>';
 
 				var pre = document.createElement("p");
@@ -175,8 +177,9 @@ function init(){
 			}
 		}
 		if (jsonobj.state == 'lieselection' ){
+			startTimer(30);
 			if (viewer){
-
+				
 				document.getElementById("viewerdivhead").innerHTML = jsonobj.question+'<br>Valaszd ki az igazat:<br>';
 				//display all lies
 
@@ -211,6 +214,8 @@ function init(){
 			}
 		};
 		if (jsonobj.state == 'scoring'){ //scoring is identical in viewer and player
+			
+			startTimer(1);
 			showonly("#viewerdiv");
 			document.getElementById("viewerdivhead").innerHTML = "Pontozas";
 			var pre = document.createElement("h1");
@@ -245,6 +250,8 @@ function init(){
 			console.log(pre.innerHTML);
 		};
 		if (jsonobj.state == "finalscoring") {//scoring is identical in viewer and player
+			
+			startTimer(30);
 			//var pre = document.createElement("h1");
 			document.getElementById("viewerdivhead").innerHTML = jsonobj.question + ' (' + jsonobj.answer + ')' + ' <br> Pontok összesítese:';
 			//console.log(pre.innerHTML);
@@ -440,6 +447,28 @@ function advancestate(){
 	}
 }
 
+var timerInterval = null;
+var timerValue = 60;
+
+function startTimer(seconds) {
+    clearInterval(timerInterval);
+    timerValue = seconds;
+    updateTimerDisplay();
+    timerInterval = setInterval(function() {
+        timerValue--;
+        updateTimerDisplay();
+        if (timerValue <= 0) {
+            clearInterval(timerInterval);
+        }
+    }, 1000);
+}
+
+function updateTimerDisplay() {
+    var timerElem = document.getElementById('timer');
+    if (timerElem) {
+        timerElem.textContent = timerValue + 's';
+    }
+}
 </script>
 </head>
 <body>
